@@ -4,6 +4,7 @@ import { useRef } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useThemeStore } from '@/store/useThemeStore';
+import { THEMES } from '@/lib/themes';
 import type { ThemeName } from '@/components/types';
 import { Bar, BarChart as RechartsBarChart, CartesianGrid, XAxis } from 'recharts';
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
@@ -43,11 +44,12 @@ export function BarChart({
         },
     };
 
+    const themeConfig = THEMES[theme];
+
     return (
         <motion.div
-            initial={false}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: theme === 'impact' ? 0.2 : 0.5 }}
+            initial={themeConfig.animations.chart.initial}
+            animate={themeConfig.animations.chart.animate}
             className={cn(
                 'p-4 transition-all duration-300 hover:shadow-[0_0_15px_3px] hover:shadow-white/20',
                 theme === 'tokyo-night' && 'rounded-lg bg-card/30 border border-border',
@@ -124,6 +126,9 @@ export function BarChart({
                                 theme === 'impact' ? 'var(--primary)' :
                                 'var(--primary)'
                             }
+                            isAnimationActive={true}
+                            animationDuration={theme === 'impact' ? 300 : 400}
+                            animationBegin={0}
                             className={cn(
                                 "transition-all duration-300",
                                 theme === 'impact' && "hover:fill-primary/80",

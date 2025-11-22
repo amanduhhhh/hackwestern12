@@ -241,9 +241,8 @@ export function Card({
 
     return (
         <motion.div
-            initial={false}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: theme === 'impact' ? 0.2 : 0.3, ease: 'easeOut' }}
+            initial={themeConfig.animations.card.initial}
+            animate={themeConfig.animations.card.animate}
             onClick={onClick}
             className={baseStyles}
         >

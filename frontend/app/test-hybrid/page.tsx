@@ -189,8 +189,8 @@ export default function TestHybridPage() {
       <div className="border-b border-border bg-card p-4">
         <div className="mb-4 flex items-center justify-between">
           <h1 className="text-xl font-semibold text-foreground">
-            HybridRenderer Demo - Hydration Stages
-          </h1>
+          HybridRenderer Demo - Hydration Stages
+        </h1>
           
           <div className="flex gap-2">
             {(['tokyo-night', 'impact', 'elegant'] as ThemeName[]).map((theme) => (

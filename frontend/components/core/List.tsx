@@ -34,8 +34,8 @@ export function List<T extends Record<string, unknown>>({
         if (!ranked) return null;
         
         if (highlightTop3) {
-            if (index === 0) return theme === 'impact' ? '🥇' : theme === 'elegant' ? '①' : '1';
-            if (index === 1) return theme === 'impact' ? '🥈' : theme === 'elegant' ? '②' : '2';
+        if (index === 0) return theme === 'impact' ? '🥇' : theme === 'elegant' ? '①' : '1';
+        if (index === 1) return theme === 'impact' ? '🥈' : theme === 'elegant' ? '②' : '2';
             if (index === 2) return theme === 'impact' ? '🥉' : theme === 'elegant' ? '③' : '3';
         }
         
@@ -43,12 +43,7 @@ export function List<T extends Record<string, unknown>>({
     };
 
     return (
-        <motion.div
-            initial={false}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: theme === 'impact' ? 0.15 : 0.2 }}
-            className={cn('flex flex-col gap-2', className)}
-        >
+        <div className={cn('flex flex-col gap-2', className)}>
             {items.map((item, index) => {
                 const primaryValue = item[template.primary] as string | number | null | undefined;
                 const secondaryValue = template.secondary ? (item[template.secondary] as string | number | null | undefined) : null;
@@ -57,11 +52,12 @@ export function List<T extends Record<string, unknown>>({
                 return (
                     <motion.div
                         key={(item.id as string | number) || index}
-                        initial={false}
+                        initial={{ opacity: 0, x: -8 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{
                             duration: theme === 'impact' ? 0.15 : 0.2,
-                            delay: 0,
+                            delay: index * 0.05,
+                            ease: 'easeOut'
                         }}
                         onClick={() => onItemClick?.(item, index)}
                         className={cn(
@@ -149,6 +145,6 @@ export function List<T extends Record<string, unknown>>({
                     No items
                 </div>
             )}
-        </motion.div>
+        </div>
     );
 }

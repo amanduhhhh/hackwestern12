@@ -1,6 +1,5 @@
 'use client';
 
-import { useRef } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useThemeStore } from '@/store/useThemeStore';
@@ -33,11 +32,12 @@ export function Timeline({
 
     const isVertical = orientation === 'vertical';
 
+    const themeConfig = THEMES[theme];
+
     return (
         <motion.div
-            initial={false}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.3 }}
+            initial={themeConfig.animations.list.initial}
+            animate={themeConfig.animations.list.animate}
             className={cn(
                 'relative',
                 isVertical ? 'pl-6' : 'flex gap-4 overflow-x-auto pb-4',
@@ -70,15 +70,15 @@ export function Timeline({
             {events.map((event, index) => (
                 <motion.div
                     key={index}
-                    initial={false}
-                    animate={{ opacity: 1, x: 0 }}
+                    initial={themeConfig.animations.list.initial}
+                    animate={themeConfig.animations.list.animate}
                     transition={{
-                        duration: theme === 'impact' ? 0.15 : 0.2,
-                        delay: 0,
+                        ...themeConfig.animations.list.animate.transition,
+                        delay: index * 0.08,
                     }}
                     onClick={() => onEventClick?.(event, index)}
-                        className={cn(
-                            'relative',
+                    className={cn(
+                        'relative',
                             isVertical ? 'mb-4' : 'shrink-0 w-64',
                         onEventClick && 'cursor-pointer'
                     )}

@@ -4,6 +4,7 @@ import { useRef } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useThemeStore } from '@/store/useThemeStore';
+import { THEMES } from '@/lib/themes';
 import type { ThemeName } from '@/components/types';
 import { CartesianGrid, Line, LineChart as RechartsLineChart, XAxis, YAxis } from 'recharts';
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
@@ -47,11 +48,12 @@ export function LineChart({
         },
     };
 
+    const themeConfig = THEMES[theme];
+
     return (
         <motion.div
-            initial={false}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: theme === 'impact' ? 0.2 : 0.5 }}
+            initial={themeConfig.animations.chart.initial}
+            animate={themeConfig.animations.chart.animate}
             className={cn(
                 'p-4 transition-all duration-300 hover:shadow-[0_0_15px_3px] hover:shadow-white/20',
                 theme === 'tokyo-night' && 'rounded-lg bg-card/30 border border-border',
@@ -84,7 +86,7 @@ export function LineChart({
                             bottom: 12
                         }}
                     >
-                        {showGrid && (
+                {showGrid && (
                             <CartesianGrid 
                                 vertical={false}
                                 strokeDasharray={theme === 'impact' ? '0' : '3 3'}
@@ -121,7 +123,7 @@ export function LineChart({
                                 strokeWidth={theme === 'impact' ? 3 : 2}
                                 dot={({ cx, cy, payload }) => {
                                     const r = theme === 'impact' ? 4 : 3;
-                                    return (
+                                return (
                                         <circle
                                             key={payload.label}
                                             cx={cx}
@@ -130,22 +132,22 @@ export function LineChart({
                                             fill={line.color || (theme === 'tokyo-night' ? 'var(--chart-1)' : 'var(--primary)')}
                                             stroke={theme === 'tokyo-night' ? 'var(--background)' : 'white'}
                                             strokeWidth={2}
-                                            className={cn(
+                                        className={cn(
                                                 "transition-all duration-300",
                                                 theme === 'tokyo-night' && "hover:r-5 hover:drop-shadow-[0_0_8px_var(--chart-1)]"
-                                            )}
-                                        />
-                                    );
+                                        )}
+                                    />
+                                );
                                 }}
                                 activeDot={{
                                     r: theme === 'impact' ? 7 : 5,
                                     className: theme === 'tokyo-night' ? 'drop-shadow-[0_0_12px_var(--chart-1)]' : ''
                                 }}
-                                className={cn(
+                        className={cn(
                                     theme === 'tokyo-night' && 'drop-shadow-[0_0_4px_var(--chart-1)]'
-                                )}
+                        )}
                             />
-                        ))}
+                ))}
                     </RechartsLineChart>
                 </ChartContainer>
             </div>

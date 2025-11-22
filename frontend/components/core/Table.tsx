@@ -51,9 +51,8 @@ export function Table<T extends Record<string, unknown>>({
 
     return (
         <motion.div
-            initial={false}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.3 }}
+            initial={themeConfig.animations.chart.initial}
+            animate={themeConfig.animations.chart.animate}
             className={cn(
                 'overflow-x-auto',
                 theme === 'tokyo-night' && 'rounded-lg bg-card/30 border border-border',
@@ -104,11 +103,11 @@ export function Table<T extends Record<string, unknown>>({
                     {data.map((row, index) => (
                         <motion.tr
                             key={index}
-                            initial={false}
-                            animate={{ opacity: 1, y: 0 }}
+                            initial={themeConfig.animations.list.initial}
+                            animate={themeConfig.animations.list.animate}
                             transition={{
-                                duration: theme === 'impact' ? 0.15 : 0.2,
-                                delay: 0,
+                                ...themeConfig.animations.list.animate.transition,
+                                delay: index * 0.03,
                             }}
                             className={cn(
                                 'border-b last:border-b-0 transition-colors',
