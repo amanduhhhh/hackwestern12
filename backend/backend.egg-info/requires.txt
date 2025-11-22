@@ -1,0 +1,10 @@
+fastapi>=0.121.3
+litellm>=1.80.0
+pydantic>=2.12.4
+pydantic-settings>=2.12.0
+python-dotenv>=1.2.1
+python-multipart>=0.0.20
+uvicorn>=0.38.0
+spotipy>=2.24.0
+requests>=2.31.0
+yfinance>=0.2.40

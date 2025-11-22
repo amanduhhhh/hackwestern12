@@ -93,9 +93,11 @@ export interface ComponentProps {
 
 export type ComponentRegistry = Record<string, React.ComponentType<ComponentProps>>;
 
+export type DataValue = ComponentData | string | number | boolean;
+
 export interface DataContext {
   [namespace: string]: {
-    [key: string]: ComponentData;
+    [key: string]: DataValue;
   };
 }
 

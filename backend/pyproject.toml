@@ -12,4 +12,10 @@ dependencies = [
     "python-dotenv>=1.2.1",
     "python-multipart>=0.0.20",
     "uvicorn>=0.38.0",
+    "spotipy>=2.24.0",
+    "requests>=2.31.0",
+    "yfinance>=0.2.40",
 ]
+
+[tool.setuptools]
+py-modules = ["main", "config", "data", "utils"]

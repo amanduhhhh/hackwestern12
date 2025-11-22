@@ -14,6 +14,7 @@ import type {
   HydrationLog,
   InteractionPayload,
 } from './types';
+import { generateSlotId, resolveDataSource, parseConfig } from './utils';
 
 interface HybridRendererProps {
   htmlContent: string;
@@ -52,45 +53,9 @@ class SlotErrorBoundary extends React.Component<
   }
 }
 
-function generateSlotId(slot: Element): string {
-  const type = slot.getAttribute('type') || 'unknown';
-  const dataSource = slot.getAttribute('data-source') || '';
-  return `${type}::${dataSource}`;
-}
-
-function resolveDataSource(
-  dataContext: DataContext,
-  dataSource: string | null
-): ComponentData {
-  if (!dataSource) return null;
-
-  const parts = dataSource.split('::');
-  if (parts.length !== 2) return null;
-
-  const [namespace, key] = parts;
-  const namespaceData = dataContext[namespace];
-  if (!namespaceData) return null;
-
-  return namespaceData[key] ?? null;
-}
-
-function parseConfig(configString: string | null): ComponentConfig {
-  if (!configString) return {};
-  try {
-    return JSON.parse(configString) as ComponentConfig;
-  } catch {
-    return {};
-  }
-}
-
 const DOMPURIFY_CONFIG = {
-  ADD_TAGS: ['component-slot'],
-  ADD_ATTR: ['type', 'data-source', 'config', 'interaction'],
-  CUSTOM_ELEMENT_HANDLING: {
-    tagNameCheck: /^component-slot$/i,
-    attributeNameCheck: /^(type|data-source|config|interaction)$/i,
-    allowCustomizedBuiltInElements: true,
-  },
+  ADD_TAGS: ['component-slot', 'data-value'],
+  ADD_ATTR: ['type', 'data-source', 'config', 'interaction', 'slot-id'],
 };
 
 export function HybridRenderer({
@@ -102,18 +67,17 @@ export function HybridRenderer({
   const containerRef = useRef<HTMLDivElement>(null);
   const rootsRef = useRef<Map<string, Root>>(new Map());
   const mountedSlotsRef = useRef<Set<string>>(new Set());
-  const observerRef = useRef<MutationObserver | null>(null);
-  const lastClosingTagCountRef = useRef<number>(0);
   const [isReady, setIsReady] = useState(false);
 
   const onLogRef = useRef(onLog);
-  onLogRef.current = onLog;
-
   const onInteractionRef = useRef(onInteraction);
-  onInteractionRef.current = onInteraction;
-
   const dataContextRef = useRef(dataContext);
-  dataContextRef.current = dataContext;
+
+  useEffect(() => {
+    onLogRef.current = onLog;
+    onInteractionRef.current = onInteraction;
+    dataContextRef.current = dataContext;
+  });
 
   const log = useCallback((
     stage: HydrationLog['stage'],
@@ -207,71 +171,34 @@ export function HybridRenderer({
         try {
           root.unmount();
         } catch {
-          // Root already unmounted
         }
       });
     });
   }, []);
 
   useEffect(() => {
-    if (!containerRef.current) return;
+    return () => cleanupRoots();
+  }, [cleanupRoots]);
 
-    const container = containerRef.current;
+  const prevHtmlRef = useRef<string>('');
 
-    observerRef.current = new MutationObserver((mutations) => {
-      for (const mutation of mutations) {
-        for (const node of mutation.addedNodes) {
-          if (node.nodeType !== Node.ELEMENT_NODE) continue;
-
-          const element = node as Element;
-
-          if (element.nodeName === 'COMPONENT-SLOT') {
-            const slotId = generateSlotId(element);
-
-            if (!mountedSlotsRef.current.has(slotId)) {
-              mountComponent(element, slotId);
-              mountedSlotsRef.current.add(slotId);
-            }
-          }
-
-          const nestedSlots = element.querySelectorAll('component-slot');
-          nestedSlots.forEach((slot) => {
-            const slotId = generateSlotId(slot);
-
-            if (!mountedSlotsRef.current.has(slotId)) {
-              mountComponent(slot, slotId);
-              mountedSlotsRef.current.add(slotId);
-            }
-          });
-        }
-      }
-
-      if (mountedSlotsRef.current.size > 0) {
-        setIsReady(true);
-      }
-    });
-
-    observerRef.current.observe(container, {
-      childList: true,
-      subtree: true,
-    });
-
-    return () => {
-      observerRef.current?.disconnect();
+  useEffect(() => {
+    if (!htmlContent) {
       cleanupRoots();
-    };
-  }, [mountComponent, cleanupRoots]);
+      setIsReady(false);
+      prevHtmlRef.current = '';
+    } else {
+      const isStreaming = htmlContent.startsWith(prevHtmlRef.current) && htmlContent.length > prevHtmlRef.current.length;
+
+      if (prevHtmlRef.current && !isStreaming) {
+        cleanupRoots();
+      }
+      prevHtmlRef.current = htmlContent;
+    }
+  }, [htmlContent, cleanupRoots]);
 
   useEffect(() => {
     if (!containerRef.current || !htmlContent) return;
-
-    const closingTagCount = (htmlContent.match(/<\/component-slot>/g) || []).length;
-
-    if (closingTagCount === lastClosingTagCountRef.current && mountedSlotsRef.current.size > 0) {
-      return;
-    }
-
-    lastClosingTagCountRef.current = closingTagCount;
 
     log('parse', 'Processing HTML');
     log('sanitize', 'Sanitizing HTML');
@@ -282,17 +209,13 @@ export function HybridRenderer({
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = sanitized;
 
-    const existingWrappers = new Map<string, Element>();
-    container.querySelectorAll('.hybrid-slot[data-slot-id]').forEach(wrapper => {
-      const id = wrapper.getAttribute('data-slot-id');
-      if (id) existingWrappers.set(id, wrapper);
-    });
-
     tempDiv.querySelectorAll('component-slot').forEach((slot) => {
       const slotId = generateSlotId(slot);
-      const existingWrapper = existingWrappers.get(slotId);
-      if (existingWrapper) {
-        slot.replaceWith(existingWrapper.cloneNode(true));
+      if (rootsRef.current.has(slotId)) {
+        const placeholder = document.createElement('div');
+        placeholder.className = 'hybrid-slot';
+        placeholder.setAttribute('data-slot-id', slotId);
+        slot.replaceWith(placeholder);
       }
     });
 
@@ -306,25 +229,47 @@ export function HybridRenderer({
         }
         return undefined;
       },
-      onBeforeElUpdated: (fromEl, toEl) => {
-        if (fromEl.hasAttribute('data-slot-id')) {
-          return false;
-        }
-        return true;
+      onBeforeElUpdated: (fromEl) => {
+        return !fromEl.hasAttribute('data-slot-id');
       },
       onBeforeNodeDiscarded: (node) => {
-        if (node instanceof Element && node.hasAttribute('data-slot-id')) {
-          return false;
-        }
-        return true;
+        return !(node instanceof Element && node.hasAttribute('data-slot-id'));
       },
     });
+
+    container.querySelectorAll('data-value[data-source]').forEach((el) => {
+      const source = el.getAttribute('data-source');
+      if (!source) return;
+
+      const parts = source.split('::');
+      if (parts.length !== 2) return;
+
+      const [namespace, key] = parts;
+      const namespaceData = dataContextRef.current[namespace];
+      if (!namespaceData) return;
+
+      const value = namespaceData[key];
+      if (value !== undefined && value !== null && typeof value !== 'object') {
+        el.textContent = String(value);
+        log('resolve', `Set ${source} = ${value}`);
+      }
+    });
+
+    container.querySelectorAll('component-slot').forEach((slot) => {
+      const slotId = generateSlotId(slot);
+      if (!mountedSlotsRef.current.has(slotId)) {
+        mountComponent(slot, slotId);
+        mountedSlotsRef.current.add(slotId);
+      }
+    });
+
+    setIsReady(true);
 
     log('detect', `Processing complete, ${mountedSlotsRef.current.size} slot(s) mounted`, {
       slotCount: mountedSlotsRef.current.size,
     });
 
-  }, [htmlContent, log]);
+  }, [htmlContent, log, mountComponent]);
 
   return (
     <motion.div

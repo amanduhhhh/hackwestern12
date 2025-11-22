@@ -1,0 +1,16 @@
+Metadata-Version: 2.4
+Name: backend
+Version: 0.1.0
+Summary: Add your description here
+Requires-Python: >=3.12
+Description-Content-Type: text/markdown
+Requires-Dist: fastapi>=0.121.3
+Requires-Dist: litellm>=1.80.0
+Requires-Dist: pydantic>=2.12.4
+Requires-Dist: pydantic-settings>=2.12.0
+Requires-Dist: python-dotenv>=1.2.1
+Requires-Dist: python-multipart>=0.0.20
+Requires-Dist: uvicorn>=0.38.0
+Requires-Dist: spotipy>=2.24.0
+Requires-Dist: requests>=2.31.0
+Requires-Dist: yfinance>=0.2.40
