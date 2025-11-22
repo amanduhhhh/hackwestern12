@@ -64,7 +64,7 @@ export function LineChart({
             className={cn(
                 'p-4 transition-all duration-300 hover:shadow-[0_0_15px_3px] hover:shadow-white/20',
                 theme === 'tokyo-night' && 'rounded-lg bg-card/30 border border-border',
-                theme === 'impact' && 'bg-linear-to-br from-white to-slate-50 border-2 border-primary',
+                theme === 'impact' && 'bg-linear-to-br from-white to-slate-50',
                 theme === 'elegant' && 'rounded-lg bg-card/20 border border-border/30',
                 className
             )}

@@ -66,7 +66,7 @@ const simulatedLLMResponse = `
       <component-slot
         type="List"
         data-source="music::top_tracks"
-        config='{"template": {"primary": "title", "secondary": "artist"}}'
+        config='{"template": {"primary": "title", "secondary": "artist"}, "layout": "ranked"}'
         interaction="smart"
       ></component-slot>
     </div>
@@ -154,7 +154,7 @@ const editedLLMResponse = `
       <component-slot
         type="List"
         data-source="music::top_tracks"
-        config='{"template": {"primary": "title", "secondary": "artist"}}'
+        config='{"template": {"primary": "title", "secondary": "artist"}, "layout": "ranked"}'
         interaction="smart"
       ></component-slot>
     </div>

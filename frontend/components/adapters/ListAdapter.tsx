@@ -16,7 +16,6 @@ export function ListAdapter({ data, config, onInteraction }: ComponentProps) {
         meta: template.meta,
       }}
       ranked={config.layout === 'ranked'}
-      highlightTop3={config.layout === 'ranked'}
       onItemClick={(item, index) => onInteraction('select', { item, index })}
     />
   );

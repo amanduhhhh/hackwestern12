@@ -125,7 +125,7 @@ export function Timeline({
                         {event.description && (
                             <div
                                 className={cn(
-                                    'mt-1 text-sm text-muted-foreground',
+                                    'mt-1 text-sm text-white',
                                     theme === 'impact' && 'font-bold text-xs'
                                 )}
                             >
@@ -135,10 +135,10 @@ export function Timeline({
                         {event.timestamp && (
                             <div
                                 className={cn(
-                                    'mt-2 text-xs',
-                                    theme === 'tokyo-night' && 'text-muted-foreground font-mono',
-                                    theme === 'impact' && 'text-muted-foreground font-bold uppercase',
-                                    theme === 'elegant' && 'text-muted-foreground font-sans italic'
+                                    'mt-2 text-xs text-white',
+                                    theme === 'tokyo-night' && 'font-mono',
+                                    theme === 'impact' && 'font-bold uppercase',
+                                    theme === 'elegant' && 'font-sans italic'
                                 )}
                             >
                                 {event.timestamp}

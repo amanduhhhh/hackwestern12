@@ -125,23 +125,13 @@ export default function DemoPage() {
                 {/* List Section */}
                 <section>
                     <h2 className="text-2xl font-bold text-foreground mb-6"> Lists</h2>
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div>
-                            <h3 className="text-lg font-semibold mb-3 text-foreground">Top Albums (Top 3 Highlighted)</h3>
+                            <h3 className="text-lg font-semibold mb-3 text-foreground">Ranked List</h3>
                             <List
                                 items={mockListData}
                                 template={{ primary: 'name', secondary: 'artist', meta: 'streams' }}
                                 ranked={true}
-                                highlightTop3={true}
-                            />
-                        </div>
-                        <div>
-                            <h3 className="text-lg font-semibold mb-3 text-foreground">Vanilla Ranking</h3>
-                            <List
-                                items={mockListData}
-                                template={{ primary: 'name', secondary: 'artist', meta: 'streams' }}
-                                ranked={true}
-                                highlightTop3={false}
                             />
                         </div>
                         <div>
