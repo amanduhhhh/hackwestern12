@@ -264,35 +264,113 @@ TOOL_REGISTRY = {
 
 COMPONENT_SCHEMAS = {
     "List": {
-        "description": "Displays a list of items with primary/secondary text",
-        "data": [{"id": "string|number", "title": "string", "subtitle": "string"}],
-        "config": {"template": {"primary": "field_name", "secondary": "field_name"}},
+        "description": "Displays a ranked or unranked list of items with customizable field mapping",
+        "data": [{"id": "string|number", "[any_field]": "any"}],
+        "config": {
+            "template": {
+                "primary": "field_name (e.g., 'title', 'name')",
+                "secondary": "field_name (e.g., 'artist', 'description') - optional",
+                "meta": "field_name (e.g., 'plays', 'count') - optional, displays on right"
+            },
+            "layout": "'ranked' to show numbered list - optional"
+        },
+        "example": {
+            "data": [
+                {"id": 1, "name": "Item 1", "artist": "Creator", "plays": 342},
+                {"id": 2, "name": "Item 2", "artist": "Creator 2", "plays": 289}
+            ],
+            "config": {
+                "template": {"primary": "name", "secondary": "artist", "meta": "plays"},
+                "layout": "ranked"
+            }
+        }
     },
     "Card": {
-        "description": "Single card with title, description, optional image",
-        "data": {"title": "string", "description": "string", "image": "url"},
-        "config": {},
+        "description": "Single card with flexible field mapping",
+        "data": {"[any_field]": "any"},
+        "config": {
+            "template": {
+                "primary": "field_name for title - optional",
+                "secondary": "field_name for subtitle/description - optional"
+            },
+            "layout": "'metric' | 'stat' | 'image' - optional, affects card style"
+        },
+        "example": {
+            "data": {"title": "Total Users", "description": "Active this month", "image": "url"},
+            "config": {"layout": "metric"}
+        }
     },
     "Chart": {
-        "description": "Bar chart for numerical data",
-        "data": [{"label": "string", "value": "number"}],
-        "config": {"template": {"x": "field_name", "y": "field_name"}},
+        "description": "Line or bar chart for numerical data visualization",
+        "data": [{"label": "string (x-axis)", "value": "number (y-axis)"}],
+        "config": {
+            "layout": "'bar' for bar chart, default is line chart - optional",
+            "template": {"primary": "chart title/label - optional"}
+        },
+        "example": {
+            "data": [
+                {"label": "Jan", "value": 4200},
+                {"label": "Feb", "value": 5100}
+            ],
+            "config": {"layout": "bar", "template": {"primary": "Monthly Revenue"}}
+        }
     },
     "Grid": {
-        "description": "Grid of items with images",
-        "data": [{"id": "string|number", "title": "string", "image": "url"}],
-        "config": {"columns": "number (default 3)"},
+        "description": "Grid layout for items with images",
+        "data": [{"id": "string|number", "title": "string - optional", "image": "url - optional"}],
+        "config": {
+            "columns": "number (1-6, default 3)"
+        },
+        "example": {
+            "data": [
+                {"id": 1, "title": "Album 1", "image": "https://..."},
+                {"id": 2, "title": "Album 2", "image": "https://..."}
+            ],
+            "config": {"columns": 4}
+        }
     },
     "Timeline": {
         "description": "Vertical timeline of events",
         "data": [
             {
                 "id": "string|number",
-                "title": "string",
-                "description": "string",
-                "timestamp": "string",
+                "title": "string (required)",
+                "description": "string - optional",
+                "timestamp": "string - optional"
             }
         ],
         "config": {},
+        "example": {
+            "data": [
+                {"id": 1, "title": "Event", "description": "Details", "timestamp": "2 hours ago"}
+            ]
+        }
+    },
+    "Table": {
+        "description": "Data table with sortable columns",
+        "data": [{"[any_field]": "any"}],
+        "config": {
+            "columns": [
+                {
+                    "key": "field_name (required)",
+                    "label": "column header (required)",
+                    "sortable": "boolean - optional"
+                }
+            ]
+        },
+        "example": {
+            "data": [
+                {"player": "LeBron James", "team": "Lakers", "points": 28.5, "assists": 7.2},
+                {"player": "Stephen Curry", "team": "Warriors", "points": 31.2, "assists": 6.8}
+            ],
+            "config": {
+                "columns": [
+                    {"key": "player", "label": "Player", "sortable": true},
+                    {"key": "team", "label": "Team", "sortable": true},
+                    {"key": "points", "label": "PPG", "sortable": true},
+                    {"key": "assists", "label": "APG", "sortable": true}
+                ]
+            }
+        }
     },
 }

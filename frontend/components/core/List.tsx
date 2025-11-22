@@ -65,9 +65,10 @@ export function List<T extends Record<string, unknown>>({
                                     className={cn(
                                         'shrink-0',
                                         theme === 'tokyo-night' && 'text-2xl font-bold text-foreground',
-                                        theme === 'impact' && 'text-2xl font-black text-muted-foreground',
+                                        theme === 'impact' && 'text-2xl font-black',
                                         theme === 'elegant' && 'text-xl font-serif text-muted-foreground'
                                     )}
+                                    style={theme === 'impact' ? { color: 'var(--chart-3)' } : undefined}
                                 >
                                     {getRankIcon(index)}
                                 </div>

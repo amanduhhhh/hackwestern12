@@ -130,7 +130,6 @@ export function BarChart({
                             radius={theme === 'impact' ? [0, 0, 0, 0] : [4, 4, 0, 0]}
                             fill={
                                 theme === 'tokyo-night' ? 'url(#tokyoBarGradient)' :
-                                theme === 'impact' ? 'var(--primary)' :
                                 'var(--primary)'
                             }
                             isAnimationActive={true}

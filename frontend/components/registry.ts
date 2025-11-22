@@ -5,6 +5,7 @@ import {
   ChartAdapter,
   TimelineAdapter,
   GridAdapter,
+  TableAdapter,
 } from './adapters';
 
 export const COMPONENT_REGISTRY: ComponentRegistry = {
@@ -13,4 +14,5 @@ export const COMPONENT_REGISTRY: ComponentRegistry = {
   Chart: ChartAdapter,
   Grid: GridAdapter,
   Timeline: TimelineAdapter,
+  Table: TableAdapter,
 };

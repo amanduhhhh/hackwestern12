@@ -97,6 +97,7 @@ export function Table<T extends Record<string, unknown>>({
                                     theme === 'impact' && 'text-xs font-black uppercase tracking-widest',
                                     theme === 'elegant' && 'text-sm font-serif text-muted-foreground'
                                 )}
+                                style={theme === 'impact' ? { color: 'var(--chart-3)' } : undefined}
                             >
                                 <div className="flex items-center gap-2">
                                     {column.label}

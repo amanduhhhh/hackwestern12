@@ -43,7 +43,7 @@ export function LineChart({
         value: {
             label: "Value",
             color: theme === 'tokyo-night' ? 'var(--chart-1)' : 
-                   theme === 'impact' ? 'var(--primary)' : 
+                   theme === 'impact' ? 'var(--chart-3)' : 
                    'var(--primary)',
         },
     };
@@ -126,7 +126,7 @@ export function LineChart({
                                 key={line.dataKey}
                                 dataKey={line.dataKey}
                                 type="natural"
-                                stroke={line.color || (theme === 'tokyo-night' ? 'var(--chart-1)' : 'var(--primary)')}
+                                stroke={line.color || (theme === 'tokyo-night' ? 'var(--chart-1)' : theme === 'impact' ? 'var(--chart-3)' : 'var(--primary)')}
                                 strokeWidth={theme === 'impact' ? 3 : 2}
                                 dot={({ cx, cy, payload }) => {
                                     const r = theme === 'impact' ? 4 : 3;
@@ -136,7 +136,7 @@ export function LineChart({
                                             cx={cx}
                                             cy={cy}
                                             r={r}
-                                            fill={line.color || (theme === 'tokyo-night' ? 'var(--chart-1)' : 'var(--primary)')}
+                                            fill={line.color || (theme === 'tokyo-night' ? 'var(--chart-1)' : theme === 'impact' ? 'var(--chart-3)' : 'var(--primary)')}
                                             stroke={theme === 'tokyo-night' ? 'var(--background)' : 'white'}
                                             strokeWidth={2}
                                         className={cn(

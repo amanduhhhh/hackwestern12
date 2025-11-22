@@ -75,6 +75,7 @@ export function Card({
                                     theme === 'elegant' && 'font-sans text-xs uppercase tracking-widest opacity-70',
                                     theme === 'tokyo-night' && 'font-medium'
                                 )}
+                                style={theme === 'impact' ? { color: 'var(--chart-3)' } : undefined}
                             >
                                 {title}
                             </span>
@@ -98,6 +99,7 @@ export function Card({
                                             theme === 'impact' && 'font-bold uppercase tracking-widest',
                                             theme === 'elegant' && 'font-sans font-medium uppercase tracking-widest opacity-70'
                                         )}
+                                        style={theme === 'impact' ? { color: 'var(--chart-3)' } : undefined}
                                     >
                                         {subtitle}
                                     </p>
@@ -131,6 +133,7 @@ export function Card({
                                         'text-sm font-medium text-muted-foreground',
                                         theme === 'impact' && 'text-xs font-black uppercase tracking-widest'
                                     )}
+                                    style={theme === 'impact' ? { color: 'var(--chart-3)' } : undefined}
                                 >
                                     {title}
                                 </h3>
@@ -216,12 +219,15 @@ export function Card({
                         </div>
                     )}
                     {title && (
-                        <h3 className={cn(
-                            'font-semibold',
-                            themeConfig.fonts.heading,
-                            theme === 'impact' && 'text-xs uppercase tracking-widest',
-                            theme === 'elegant' && 'text-sm'
-                        )}>
+                        <h3 
+                            className={cn(
+                                'font-semibold',
+                                themeConfig.fonts.heading,
+                                theme === 'impact' && 'text-xs uppercase tracking-widest',
+                                theme === 'elegant' && 'text-sm'
+                            )}
+                            style={theme === 'impact' ? { color: 'var(--chart-3)' } : undefined}
+                        >
                             {title}
                         </h3>
                     )}
@@ -233,7 +239,14 @@ export function Card({
 
         return (
             <>
-                {title && <h3 className={cn('font-semibold', themeConfig.fonts.heading)}>{title}</h3>}
+                {title && (
+                    <h3 
+                        className={cn('font-semibold', themeConfig.fonts.heading)}
+                        style={theme === 'impact' ? { color: 'var(--chart-3)' } : undefined}
+                    >
+                        {title}
+                    </h3>
+                )}
                 {subtitle && <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>}
                 {children && <div className="mt-2">{children}</div>}
             </>

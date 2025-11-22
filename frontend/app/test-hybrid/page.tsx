@@ -52,17 +52,16 @@ const mockDataContext: DataContext = {
 };
 
 const simulatedLLMResponse = `
-<div class="min-h-screen p-6 bg-zinc-950">
-  <div class="mb-12">
-    <p class="text-xs uppercase tracking-widest text-zinc-600">This Year</p>
-    <p class="text-8xl font-black text-white leading-none"><data-value data-source="music::total_minutes"></data-value></p>
-    <p class="text-lg text-zinc-500 -mt-2">minutes listened</p>
-    <p class="text-sm text-zinc-600 mt-1"><data-value data-source="music::total_tracks"></data-value> tracks</p>
+<div class="p-6 flex flex-col gap-8 bg-zinc-800 rounded-xl">
+  <div class="p-4 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
+    <p class="m-0 text-sm text-zinc-500 uppercase tracking-widest">Your Music</p>
+    <p class="mt-2 text-5xl font-black text-zinc-900 dark:text-zinc-100"><data-value data-source="music::total_minutes"></data-value> minutes</p>
+    <p class="mt-1 text-base text-zinc-600 dark:text-zinc-400"><data-value data-source="music::total_tracks"></data-value> tracks played</p>
   </div>
 
-  <div class="grid grid-cols-3 gap-3 mb-6">
-    <div class="col-span-2 bg-zinc-900 border border-zinc-800 p-4">
-      <p class="text-xs text-zinc-500 mb-3">Top Tracks</p>
+  <div class="grid grid-cols-2 gap-6">
+    <div class="p-4 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
+      <h3 class="mb-4 text-base font-medium text-zinc-700 dark:text-zinc-300">Top Tracks</h3>
       <component-slot
         type="List"
         data-source="music::top_tracks"
@@ -71,8 +70,8 @@ const simulatedLLMResponse = `
       ></component-slot>
     </div>
 
-    <div class="bg-zinc-900 border border-zinc-800 p-4">
-      <p class="text-xs text-zinc-500 mb-3">Profile</p>
+    <div class="p-4 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
+      <h3 class="mb-4 text-base font-medium text-zinc-700 dark:text-zinc-300">Profile</h3>
       <component-slot
         type="Card"
         data-source="user::profile"
@@ -82,8 +81,8 @@ const simulatedLLMResponse = `
     </div>
   </div>
 
-  <div class="bg-emerald-500/10 border border-emerald-500/30 p-4 mb-6">
-    <p class="text-xs text-emerald-400 mb-3">Weekly Activity</p>
+  <div class="p-4 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
+    <h3 class="mb-4 text-base font-medium text-zinc-700 dark:text-zinc-300">Weekly Listening</h3>
     <component-slot
       type="Chart"
       data-source="stats::weekly"
@@ -92,42 +91,43 @@ const simulatedLLMResponse = `
     ></component-slot>
   </div>
 
-  <div class="grid grid-cols-2 gap-3">
-    <div class="bg-zinc-900 border border-zinc-800 p-4">
-      <p class="text-xs text-zinc-500 mb-3">Albums</p>
-      <component-slot
-        type="Grid"
-        data-source="albums::recent"
-        config='{"columns": 3}'
-        interaction="select"
-      ></component-slot>
-    </div>
+  <div class="p-4 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
+    <h3 class="mb-4 text-base font-medium text-zinc-700 dark:text-zinc-300">Recent Albums</h3>
+    <component-slot
+      type="Grid"
+      data-source="albums::recent"
+      config='{"columns": 3}'
+      interaction="select"
+    ></component-slot>
+  </div>
 
-    <div class="bg-violet-500/10 border border-violet-500/30 p-4">
-      <p class="text-xs text-violet-400 mb-3">Activity</p>
-      <component-slot
-        type="Timeline"
-        data-source="activity::timeline"
-        config='{}'
-        interaction="expand"
-      ></component-slot>
-    </div>
+  <div class="p-4 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
+    <h3 class="mb-4 text-base font-medium text-zinc-700 dark:text-zinc-300">Activity</h3>
+    <component-slot
+      type="Timeline"
+      data-source="activity::timeline"
+      config='{}'
+      interaction="expand"
+    ></component-slot>
   </div>
 </div>
 `;
 
 const editedLLMResponse = `
-<div class="min-h-screen p-6 bg-zinc-950">
-  <div class="flex items-end gap-8 mb-10">
-    <div>
-      <p class="text-xs uppercase tracking-widest text-zinc-600">Minutes</p>
-      <p class="text-7xl font-black text-white leading-none"><data-value data-source="music::total_minutes"></data-value></p>
+<div class="p-6 flex flex-col gap-8 bg-zinc-800 rounded-xl">
+  <div class="grid grid-cols-3 gap-4">
+    <div class="p-4 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
+      <p class="m-0 text-xs text-zinc-500 uppercase tracking-widest">Total Time</p>
+      <p class="mt-1 text-3xl font-black text-zinc-900 dark:text-zinc-100"><data-value data-source="music::total_minutes"></data-value></p>
+      <p class="text-sm text-zinc-500">minutes</p>
     </div>
-    <div>
-      <p class="text-xs uppercase tracking-widest text-zinc-600">Tracks</p>
-      <p class="text-5xl font-black text-zinc-400 leading-none"><data-value data-source="music::total_tracks"></data-value></p>
+    <div class="p-4 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
+      <p class="m-0 text-xs text-zinc-500 uppercase tracking-widest">Tracks</p>
+      <p class="mt-1 text-3xl font-black text-zinc-900 dark:text-zinc-100"><data-value data-source="music::total_tracks"></data-value></p>
+      <p class="text-sm text-zinc-500">played</p>
     </div>
-    <div class="flex-1 bg-zinc-900 border border-zinc-800 p-3">
+    <div class="p-4 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
+      <h3 class="mb-2 text-xs font-medium text-zinc-500 uppercase">Profile</h3>
       <component-slot
         type="Card"
         data-source="user::profile"
@@ -137,8 +137,8 @@ const editedLLMResponse = `
     </div>
   </div>
 
-  <div class="bg-blue-500/10 border border-blue-500/30 p-4 mb-6">
-    <p class="text-xs text-blue-400 mb-3">Weekly</p>
+  <div class="p-4 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950">
+    <h3 class="mb-4 text-base font-medium text-blue-700 dark:text-blue-300">Weekly Activity</h3>
     <component-slot
       type="Chart"
       data-source="stats::weekly"
@@ -147,9 +147,9 @@ const editedLLMResponse = `
     ></component-slot>
   </div>
 
-  <div class="grid grid-cols-5 gap-3 mb-6">
-    <div class="col-span-3 bg-zinc-900 border border-zinc-800 p-4">
-      <p class="text-xs text-zinc-500 mb-3">Top Tracks</p>
+  <div class="grid grid-cols-2 gap-6">
+    <div class="p-4 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
+      <h3 class="mb-4 text-base font-medium text-zinc-700 dark:text-zinc-300">Top Tracks</h3>
       <component-slot
         type="List"
         data-source="music::top_tracks"
@@ -158,8 +158,8 @@ const editedLLMResponse = `
       ></component-slot>
     </div>
 
-    <div class="col-span-2 bg-zinc-900 border border-zinc-800 p-4">
-      <p class="text-xs text-zinc-500 mb-3">Recent</p>
+    <div class="p-4 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
+      <h3 class="mb-4 text-base font-medium text-zinc-700 dark:text-zinc-300">Activity Timeline</h3>
       <component-slot
         type="Timeline"
         data-source="activity::timeline"
@@ -169,8 +169,8 @@ const editedLLMResponse = `
     </div>
   </div>
 
-  <div class="bg-zinc-900 border border-zinc-800 p-4">
-    <p class="text-xs text-zinc-500 mb-3">Albums</p>
+  <div class="p-4 rounded-lg border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-950">
+    <h3 class="mb-4 text-base font-medium text-purple-700 dark:text-purple-300">Album Gallery</h3>
     <component-slot
       type="Grid"
       data-source="albums::recent"

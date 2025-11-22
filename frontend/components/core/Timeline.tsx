@@ -46,8 +46,8 @@ export function Timeline({
             animate={listAnimate}
             transition={listTransition}
             className={cn(
-                'relative',
-                isVertical ? 'pl-6 max-w-[700px]' : 'flex gap-4 overflow-x-auto pb-4',
+                'relative max-w-[700px]',
+                isVertical ? 'pl-6' : 'flex gap-4 overflow-x-auto pb-4',
                 className
             )}
         >
@@ -56,9 +56,10 @@ export function Timeline({
                     className={cn(
                         'absolute left-2 top-0 h-full w-0.5',
                         theme === 'tokyo-night' && 'bg-primary/30',
-                        theme === 'impact' && 'bg-primary w-1',
+                        theme === 'impact' && 'w-1',
                         theme === 'elegant' && 'bg-primary/20'
                     )}
+                    style={theme === 'impact' ? { backgroundColor: 'var(--chart-3)' } : undefined}
                 />
             )}
 
