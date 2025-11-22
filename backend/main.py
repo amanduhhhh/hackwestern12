@@ -8,8 +8,9 @@ from typing import AsyncGenerator, Optional
 
 from config import get_settings
 from data import MOCK_DATA
-from utils import get_data
+from utils import get_data, sanitize_prompt
 from prompts import build_planning_prompt, build_ui_system_prompt, build_ui_user_prompt
+import openai
 from integrations import (
     SpotifyDataFetcher,
     StocksDataFetcher,
@@ -49,6 +50,171 @@ app.add_middleware(
 
 class GenerateRequest(BaseModel):
     query: str
+
+class QueryRequest(BaseModel):
+    prompt: str
+
+
+def get_spotify_data():
+    """Get user's Spotify listening data including top songs, artists, and genres"""
+    return spotify_fetcher.fetch_user_data()
+
+def get_stock_info(symbol: str):
+    """Get detailed information for a specific stock symbol"""
+    return stocks_fetcher.fetch_stock_info(symbol)
+
+def get_market_trends():
+    """Get current stock market trends, indices, and top movers"""
+    return stocks_fetcher.fetch_market_trends()
+
+def get_portfolio_data(symbols: list):
+    """Get portfolio data for multiple stock symbols"""
+    return stocks_fetcher.fetch_portfolio_data(symbols)
+
+def get_sports_team_data(team_name: str):
+    """Search for a sports team and get their current stats"""
+    team_info = sports_fetcher.search_team(team_name)
+    if team_info:
+        stats = sports_fetcher.get_team_stats(team_info["abbreviation"])
+        return {**team_info, **stats}
+    return None
+
+def get_strava_data():
+    """Get user's Strava fitness activities and stats"""
+    return strava_fetcher.fetch_activities()
+
+def get_clash_data():
+    """Get user's Clash Royale game data"""
+    return clash_fetcher.fetch_player_data()
+
+tools = [
+    {
+        "type": "function",
+        "function": {
+            "name": "get_spotify_data",
+            "description": "Get user's Spotify listening data including top songs, artists, genres, and listening time"
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_stock_info",
+            "description": "Get detailed information for a specific stock symbol",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "symbol": {"type": "string", "description": "Stock ticker symbol (e.g., AAPL, TSLA)"}
+                },
+                "required": ["symbol"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_market_trends",
+            "description": "Get current stock market trends, major indices, and top gainers/losers"
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_portfolio_data",
+            "description": "Get portfolio data for multiple stock symbols",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "symbols": {"type": "array", "items": {"type": "string"}, "description": "List of stock symbols"}
+                },
+                "required": ["symbols"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_sports_team_data",
+            "description": "Search for a sports team and get their current stats including wins, losses, and venue",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "team_name": {"type": "string", "description": "Name of the sports team (e.g., Lakers, Warriors)"}
+                },
+                "required": ["team_name"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_strava_data",
+            "description": "Get user's Strava fitness activities and running stats"
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_clash_data",
+            "description": "Get user's Clash Royale game statistics and player data"
+        }
+    }
+]
+
+available_functions = {
+    "get_spotify_data": get_spotify_data,
+    "get_stock_info": get_stock_info,
+    "get_market_trends": get_market_trends,
+    "get_portfolio_data": get_portfolio_data,
+    "get_sports_team_data": get_sports_team_data,
+    "get_strava_data": get_strava_data,
+    "get_clash_data": get_clash_data
+}
+
+@app.post("/api/query")
+async def intelligent_query(request: QueryRequest):
+    """Use OpenAI function calling to dynamically fetch data based on user prompt"""
+    prompt = sanitize_prompt(request.prompt)
+    openai.api_key = settings.openai_api_key
+    
+    messages = [
+        {"role": "system", "content": "You are a helpful assistant that retrieves user data from various sources. Use the available functions to fetch the requested data."},
+        {"role": "user", "content": prompt}
+    ]
+    
+    response = openai.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=messages,
+        tools=tools,
+        tool_choice="auto"
+    )
+    
+    response_message = response.choices[0].message
+    tool_calls = response_message.tool_calls
+    
+    if not tool_calls:
+        return {"prompt": prompt, "message": response_message.content, "data": {}}
+    
+    data = {}
+    functions_called = []
+    
+    for tool_call in tool_calls:
+        function_name = tool_call.function.name
+        function_args = json.loads(tool_call.function.arguments)
+        functions_called.append({"function": function_name, "args": function_args})
+        
+        function_to_call = available_functions[function_name]
+        
+        try:
+            if function_args:
+                result = function_to_call(**function_args)
+            else:
+                result = function_to_call()
+            
+            data[function_name] = result
+        except Exception as e:
+            data[function_name] = {"error": str(e)}
+    
+    return {"prompt": prompt, "functions_called": functions_called, "data": data}
 
 
 class RefineRequest(BaseModel):

@@ -1,4 +1,13 @@
 from typing import Dict, Any
+import re
+
+
+def sanitize_prompt(prompt: str) -> str:
+    """Clean and normalize user input for safer processing"""
+    prompt = prompt.strip()
+    prompt = re.sub(r'\s+', ' ', prompt)
+    prompt = prompt[:500]
+    return prompt
 
 
 def extract_complete_element(html: str) -> str:
