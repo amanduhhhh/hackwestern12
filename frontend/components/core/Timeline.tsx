@@ -33,11 +33,18 @@ export function Timeline({
     const isVertical = orientation === 'vertical';
 
     const themeConfig = THEMES[theme];
+    const listAnim = themeConfig.animations.list as { initial?: any; animate?: any };
+    const listInitial = listAnim.initial ?? false;
+    const listAnimateValue = listAnim.animate ?? {};
+    const { transition: listTransition, ...listAnimate } = listAnimateValue && typeof listAnimateValue === 'object' && 'transition' in listAnimateValue
+        ? listAnimateValue
+        : { ...listAnimateValue, transition: undefined };
 
     return (
         <motion.div
-            initial={themeConfig.animations.list.initial}
-            animate={themeConfig.animations.list.animate}
+            initial={listInitial}
+            animate={listAnimate}
+            transition={listTransition}
             className={cn(
                 'relative',
                 isVertical ? 'pl-6' : 'flex gap-4 overflow-x-auto pb-4',
@@ -70,10 +77,10 @@ export function Timeline({
             {events.map((event, index) => (
                 <motion.div
                     key={index}
-                    initial={themeConfig.animations.list.initial}
-                    animate={themeConfig.animations.list.animate}
+                    initial={listInitial}
+                    animate={listAnimate}
                     transition={{
-                        ...themeConfig.animations.list.animate.transition,
+                        ...listTransition,
                         delay: index * 0.08,
                     }}
                     onClick={() => onEventClick?.(event, index)}

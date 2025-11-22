@@ -239,10 +239,18 @@ export function Card({
         );
     };
 
+    const cardAnim = themeConfig.animations.card as { initial?: any; animate?: any };
+    const initial = cardAnim.initial ?? false;
+    const animateValue = cardAnim.animate ?? {};
+    const { transition, ...animate } = animateValue && typeof animateValue === 'object' && 'transition' in animateValue
+        ? animateValue
+        : { ...animateValue, transition: undefined };
+
     return (
         <motion.div
-            initial={themeConfig.animations.card.initial}
-            animate={themeConfig.animations.card.animate}
+            initial={initial}
+            animate={animate}
+            transition={transition}
             onClick={onClick}
             className={baseStyles}
         >

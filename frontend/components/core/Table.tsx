@@ -49,10 +49,25 @@ export function Table<T extends Record<string, unknown>>({
         onSort?.(key, newDirection);
     };
 
+    const chartAnim = themeConfig.animations.chart as { initial?: any; animate?: any };
+    const chartInitial = chartAnim.initial ?? false;
+    const chartAnimateValue = chartAnim.animate ?? {};
+    const { transition: chartTransition, ...chartAnimate } = chartAnimateValue && typeof chartAnimateValue === 'object' && 'transition' in chartAnimateValue
+        ? chartAnimateValue
+        : { ...chartAnimateValue, transition: undefined };
+
+    const listAnim = themeConfig.animations.list as { initial?: any; animate?: any };
+    const listInitial = listAnim.initial ?? false;
+    const listAnimateValue = listAnim.animate ?? {};
+    const { transition: listTransition, ...listAnimate } = listAnimateValue && typeof listAnimateValue === 'object' && 'transition' in listAnimateValue
+        ? listAnimateValue
+        : { ...listAnimateValue, transition: undefined };
+
     return (
         <motion.div
-            initial={themeConfig.animations.chart.initial}
-            animate={themeConfig.animations.chart.animate}
+            initial={chartInitial}
+            animate={chartAnimate}
+            transition={chartTransition}
             className={cn(
                 'overflow-x-auto',
                 theme === 'tokyo-night' && 'rounded-lg bg-card/30 border border-border',
@@ -103,10 +118,10 @@ export function Table<T extends Record<string, unknown>>({
                     {data.map((row, index) => (
                         <motion.tr
                             key={index}
-                            initial={themeConfig.animations.list.initial}
-                            animate={themeConfig.animations.list.animate}
+                            initial={listInitial}
+                            animate={listAnimate}
                             transition={{
-                                ...themeConfig.animations.list.animate.transition,
+                                ...listTransition,
                                 delay: index * 0.03,
                             }}
                             className={cn(

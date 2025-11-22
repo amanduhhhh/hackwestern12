@@ -49,11 +49,18 @@ export function LineChart({
     };
 
     const themeConfig = THEMES[theme];
+    const chartAnim = themeConfig.animations.chart as { initial?: any; animate?: any };
+    const chartInitial = chartAnim.initial ?? false;
+    const chartAnimateValue = chartAnim.animate ?? {};
+    const { transition: chartTransition, ...chartAnimate } = chartAnimateValue && typeof chartAnimateValue === 'object' && 'transition' in chartAnimateValue
+        ? chartAnimateValue
+        : { ...chartAnimateValue, transition: undefined };
 
     return (
         <motion.div
-            initial={themeConfig.animations.chart.initial}
-            animate={themeConfig.animations.chart.animate}
+            initial={chartInitial}
+            animate={chartAnimate}
+            transition={chartTransition}
             className={cn(
                 'p-4 transition-all duration-300 hover:shadow-[0_0_15px_3px] hover:shadow-white/20',
                 theme === 'tokyo-night' && 'rounded-lg bg-card/30 border border-border',
