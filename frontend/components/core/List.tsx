@@ -29,10 +29,6 @@ export function List<T extends Record<string, unknown>>({
     const { currentTheme } = useThemeStore();
     const theme = propTheme || currentTheme;
     const themeConfig = THEMES[theme];
-    const hasAnimated = useRef(false);
-
-    const shouldAnimate = !hasAnimated.current;
-    if (shouldAnimate) hasAnimated.current = true;
 
     const getRankIcon = (index: number) => {
         if (!ranked) return null;
@@ -48,7 +44,7 @@ export function List<T extends Record<string, unknown>>({
 
     return (
         <motion.div
-            initial={shouldAnimate ? { opacity: 0, x: -8 } : false}
+            initial={false}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: theme === 'impact' ? 0.15 : 0.2 }}
             className={cn('flex flex-col gap-2', className)}
@@ -61,11 +57,11 @@ export function List<T extends Record<string, unknown>>({
                 return (
                     <motion.div
                         key={(item.id as string | number) || index}
-                        initial={shouldAnimate ? { opacity: 0, x: -8 } : false}
+                        initial={false}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{
                             duration: theme === 'impact' ? 0.15 : 0.2,
-                            delay: shouldAnimate ? index * 0.05 : 0,
+                            delay: 0,
                         }}
                         onClick={() => onItemClick?.(item, index)}
                         className={cn(

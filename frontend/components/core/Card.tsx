@@ -35,10 +35,6 @@ export function Card({
     const { currentTheme } = useThemeStore();
     const theme = propTheme || currentTheme;
     const themeConfig = THEMES[theme];
-    const hasAnimated = useRef(false);
-
-    const shouldAnimate = !hasAnimated.current;
-    if (shouldAnimate) hasAnimated.current = true;
 
     const baseStyles = cn(
         themeConfig.styles.card,
@@ -202,7 +198,7 @@ export function Card({
 
     return (
         <motion.div
-            initial={shouldAnimate ? { opacity: 0, scale: 0.98 } : false}
+            initial={false}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: theme === 'impact' ? 0.2 : 0.3, ease: 'easeOut' }}
             onClick={onClick}

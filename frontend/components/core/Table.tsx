@@ -51,7 +51,7 @@ export function Table<T extends Record<string, unknown>>({
 
     return (
         <motion.div
-            initial={shouldAnimate ? { opacity: 0 } : false}
+            initial={false}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.3 }}
             className={cn(
@@ -104,11 +104,11 @@ export function Table<T extends Record<string, unknown>>({
                     {data.map((row, index) => (
                         <motion.tr
                             key={index}
-                            initial={shouldAnimate ? { opacity: 0, y: 4 } : false}
+                            initial={false}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{
                                 duration: theme === 'impact' ? 0.15 : 0.2,
-                                delay: shouldAnimate ? index * 0.03 : 0,
+                                delay: 0,
                             }}
                             className={cn(
                                 'border-b last:border-b-0 transition-colors',

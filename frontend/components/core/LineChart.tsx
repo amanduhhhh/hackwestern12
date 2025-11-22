@@ -37,10 +37,6 @@ export function LineChart({
 }: LineChartProps) {
     const { currentTheme } = useThemeStore();
     const theme = propTheme || currentTheme;
-    const hasAnimated = useRef(false);
-
-    const shouldAnimate = !hasAnimated.current;
-    if (shouldAnimate) hasAnimated.current = true;
 
     const config: ChartConfig = {
         value: {
@@ -53,7 +49,7 @@ export function LineChart({
 
     return (
         <motion.div
-            initial={shouldAnimate ? { opacity: 0, y: 8 } : false}
+            initial={false}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: theme === 'impact' ? 0.2 : 0.5 }}
             className={cn(

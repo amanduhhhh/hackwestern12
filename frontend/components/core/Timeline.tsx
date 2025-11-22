@@ -30,16 +30,12 @@ export function Timeline({
 }: TimelineProps) {
     const { currentTheme } = useThemeStore();
     const theme = propTheme || currentTheme;
-    const hasAnimated = useRef(false);
-
-    const shouldAnimate = !hasAnimated.current;
-    if (shouldAnimate) hasAnimated.current = true;
 
     const isVertical = orientation === 'vertical';
 
     return (
         <motion.div
-            initial={shouldAnimate ? { opacity: 0 } : false}
+            initial={false}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.3 }}
             className={cn(
@@ -74,11 +70,11 @@ export function Timeline({
             {events.map((event, index) => (
                 <motion.div
                     key={index}
-                    initial={shouldAnimate ? { opacity: 0, x: -8 } : false}
+                    initial={false}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{
                         duration: theme === 'impact' ? 0.15 : 0.2,
-                        delay: shouldAnimate ? index * 0.08 : 0,
+                        delay: 0,
                     }}
                     onClick={() => onEventClick?.(event, index)}
                         className={cn(
