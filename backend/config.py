@@ -15,6 +15,10 @@ class Settings(BaseSettings):
     
     # Sports API (TheSportsDB - free tier available)
     sports_api_key: str = ""
+
+
+    # Clash Royale API key
+    clashroyale_api_key: str = ""
     
     # Stocks - using yfinance (no API key needed for basic features)
     # But can add Alpha Vantage for more features
