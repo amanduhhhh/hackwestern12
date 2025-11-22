@@ -17,6 +17,8 @@ from prompts import (
 from integrations.spotify import SpotifyDataFetcher
 from integrations.stocks import StocksDataFetcher
 from integrations.sports import SportsDataFetcher
+from integrations.strava import StravaDataFetcher
+from integrations.clashroyale import ClashRoyaleDataFetcher
 
 app = FastAPI()
 settings = get_settings()
@@ -35,6 +37,18 @@ stocks_fetcher = StocksDataFetcher(alpha_vantage_key=settings.alpha_vantage_api_
 
 # Initialize Sports fetcher
 sports_fetcher = SportsDataFetcher(api_key=settings.sports_api_key)
+
+# Initialize Strava fetcher
+strava_fetcher = StravaDataFetcher(
+    client_id=settings.strava_client_id,
+    client_secret=settings.strava_client_secret,
+    refresh_token=settings.strava_refresh_token
+)
+
+# Initialize Clash Royale fetcher
+clash_fetcher = ClashRoyaleDataFetcher(
+    api_key=settings.clashroyale_api_key
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -307,7 +321,80 @@ async def sports_summary(teams: str = Query(..., description="Comma-separated te
             status_code=500,
             content={"error": f"Error fetching sports summary: {str(e)}"}
         )
+# ==================== STRAVA ENDPOINTS ====================
 
+@app.get("/api/strava/summary")
+async def strava_summary():
+    """Get Strava user summary"""
+    if not strava_fetcher.is_authenticated():
+        return JSONResponse(
+            status_code=401,
+            content={"error": "Strava not configured"}
+        )
+    
+    data = strava_fetcher.fetch_user_summary()
+    if not data:
+        return JSONResponse(
+            status_code=500,
+            content={"error": "Failed to fetch Strava data"}
+        )
+    return data
+
+
+@app.get("/api/strava/activities")
+async def strava_activities(limit: int = Query(10, description="Number of activities")):
+    """Get recent Strava activities"""
+    if not strava_fetcher.is_authenticated():
+        return JSONResponse(
+            status_code=401,
+            content={"error": "Strava not configured"}
+        )
+    
+    data = strava_fetcher.get_activities(limit=limit)
+    if not data:
+        return JSONResponse(
+            status_code=500,
+            content={"error": "Failed to fetch activities"}
+        )
+    return data
+
+
+# ==================== CLASH ROYALE ENDPOINTS ====================
+
+@app.get("/api/clash/player/{player_tag:path}")
+async def clash_player(player_tag: str):
+    """Get Clash Royale player info"""
+    if not clash_fetcher.is_authenticated():
+        return JSONResponse(
+            status_code=401,
+            content={"error": "Clash Royale API key not configured"}
+        )
+    
+    data = clash_fetcher.get_player(player_tag)
+    if not data:
+        return JSONResponse(
+            status_code=404,
+            content={"error": f"Player {player_tag} not found"}
+        )
+    return data
+
+
+@app.get("/api/clash/summary/{player_tag:path}")
+async def clash_summary(player_tag: str):
+    """Get full Clash Royale player summary"""
+    if not clash_fetcher.is_authenticated():
+        return JSONResponse(
+            status_code=401,
+            content={"error": "Clash Royale API key not configured"}
+        )
+    
+    data = clash_fetcher.fetch_user_summary(player_tag)
+    if not data:
+        return JSONResponse(
+            status_code=404,
+            content={"error": f"Player {player_tag} not found"}
+        )
+    return data
 
 @app.post("/api/generate")
 async def generate_ui(request: GenerateRequest):
