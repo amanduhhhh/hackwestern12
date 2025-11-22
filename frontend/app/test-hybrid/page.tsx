@@ -52,15 +52,15 @@ const mockDataContext: DataContext = {
 };
 
 const simulatedLLMResponse = `
-<div class="p-6 flex flex-col gap-8">
-  <div>
+<div class="p-6 flex flex-col gap-8 bg-zinc-800 rounded-xl">
+  <div class="p-4 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
     <p class="m-0 text-sm text-zinc-500 uppercase tracking-widest">Your Music</p>
     <p class="mt-2 text-5xl font-black text-zinc-900 dark:text-zinc-100"><data-value data-source="music::total_minutes"></data-value> minutes</p>
     <p class="mt-1 text-base text-zinc-600 dark:text-zinc-400"><data-value data-source="music::total_tracks"></data-value> tracks played</p>
   </div>
 
   <div class="grid grid-cols-2 gap-6">
-    <div>
+    <div class="p-4 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
       <h3 class="mb-4 text-base font-medium text-zinc-700 dark:text-zinc-300">Top Tracks</h3>
       <component-slot
         type="List"
@@ -70,7 +70,7 @@ const simulatedLLMResponse = `
       ></component-slot>
     </div>
 
-    <div>
+    <div class="p-4 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
       <h3 class="mb-4 text-base font-medium text-zinc-700 dark:text-zinc-300">Profile</h3>
       <component-slot
         type="Card"
@@ -81,7 +81,7 @@ const simulatedLLMResponse = `
     </div>
   </div>
 
-  <div>
+  <div class="p-4 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
     <h3 class="mb-4 text-base font-medium text-zinc-700 dark:text-zinc-300">Weekly Listening</h3>
     <component-slot
       type="Chart"
@@ -91,7 +91,7 @@ const simulatedLLMResponse = `
     ></component-slot>
   </div>
 
-  <div>
+  <div class="p-4 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
     <h3 class="mb-4 text-base font-medium text-zinc-700 dark:text-zinc-300">Recent Albums</h3>
     <component-slot
       type="Grid"
@@ -101,13 +101,82 @@ const simulatedLLMResponse = `
     ></component-slot>
   </div>
 
-  <div>
+  <div class="p-4 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
     <h3 class="mb-4 text-base font-medium text-zinc-700 dark:text-zinc-300">Activity</h3>
     <component-slot
       type="Timeline"
       data-source="activity::timeline"
       config='{}'
       interaction="expand"
+    ></component-slot>
+  </div>
+</div>
+`;
+
+// Edited version - different layout, swapped components, changed structure
+const editedLLMResponse = `
+<div class="p-6 flex flex-col gap-8 bg-zinc-800 rounded-xl">
+  <div class="grid grid-cols-3 gap-4">
+    <div class="p-4 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
+      <p class="m-0 text-xs text-zinc-500 uppercase tracking-widest">Total Time</p>
+      <p class="mt-1 text-3xl font-black text-zinc-900 dark:text-zinc-100"><data-value data-source="music::total_minutes"></data-value></p>
+      <p class="text-sm text-zinc-500">minutes</p>
+    </div>
+    <div class="p-4 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
+      <p class="m-0 text-xs text-zinc-500 uppercase tracking-widest">Tracks</p>
+      <p class="mt-1 text-3xl font-black text-zinc-900 dark:text-zinc-100"><data-value data-source="music::total_tracks"></data-value></p>
+      <p class="text-sm text-zinc-500">played</p>
+    </div>
+    <div class="p-4 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
+      <h3 class="mb-2 text-xs font-medium text-zinc-500 uppercase">Profile</h3>
+      <component-slot
+        type="Card"
+        data-source="user::profile"
+        config='{"template": {"primary": "title", "secondary": "description"}}'
+        interaction="click"
+      ></component-slot>
+    </div>
+  </div>
+
+  <div class="p-4 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950">
+    <h3 class="mb-4 text-base font-medium text-blue-700 dark:text-blue-300">Weekly Activity</h3>
+    <component-slot
+      type="Chart"
+      data-source="stats::weekly"
+      config='{}'
+      interaction="hover"
+    ></component-slot>
+  </div>
+
+  <div class="grid grid-cols-2 gap-6">
+    <div class="p-4 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
+      <h3 class="mb-4 text-base font-medium text-zinc-700 dark:text-zinc-300">Top Tracks</h3>
+      <component-slot
+        type="List"
+        data-source="music::top_tracks"
+        config='{"template": {"primary": "title", "secondary": "artist"}}'
+        interaction="smart"
+      ></component-slot>
+    </div>
+
+    <div class="p-4 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
+      <h3 class="mb-4 text-base font-medium text-zinc-700 dark:text-zinc-300">Activity Timeline</h3>
+      <component-slot
+        type="Timeline"
+        data-source="activity::timeline"
+        config='{}'
+        interaction="expand"
+      ></component-slot>
+    </div>
+  </div>
+
+  <div class="p-4 rounded-lg border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-950">
+    <h3 class="mb-4 text-base font-medium text-purple-700 dark:text-purple-300">Album Gallery</h3>
+    <component-slot
+      type="Grid"
+      data-source="albums::recent"
+      config='{"columns": 6}'
+      interaction="select"
     ></component-slot>
   </div>
 </div>
@@ -175,6 +244,29 @@ export default function TestHybridPage() {
     setStreamProgress(100);
   };
 
+  const simulateEdit = async () => {
+    if (!htmlContent) {
+      loadInstantly();
+      return;
+    }
+
+    setLogs([]);
+    setIsStreaming(true);
+    setStreamProgress(0);
+
+    const chunks = editedLLMResponse.match(/.{1,100}/g) || [];
+    let accumulated = '';
+
+    for (let i = 0; i < chunks.length; i++) {
+      accumulated += chunks[i];
+      setHtmlContent(accumulated);
+      setStreamProgress(((i + 1) / chunks.length) * 100);
+      await new Promise(resolve => setTimeout(resolve, 50));
+    }
+
+    setIsStreaming(false);
+  };
+
   const reset = () => {
     setHtmlContent('');
     setLogs([]);
@@ -209,6 +301,13 @@ export default function TestHybridPage() {
             className="rounded-md bg-green-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-600 disabled:opacity-50"
           >
             Load Instantly
+          </button>
+          <button
+            onClick={simulateEdit}
+            disabled={isStreaming}
+            className="rounded-md bg-purple-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-purple-600 disabled:opacity-50"
+          >
+            Simulate Edit
           </button>
           <button
             onClick={reset}

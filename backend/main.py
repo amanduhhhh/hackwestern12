@@ -217,6 +217,12 @@ async def intelligent_query(request: QueryRequest):
     return {"prompt": prompt, "functions_called": functions_called, "data": data}
 
 
+class RefineRequest(BaseModel):
+    query: str
+    currentHtml: str
+    dataContext: dict
+
+
 @app.get("/health")
 async def health():
     return {"status": "ok"}
@@ -459,6 +465,67 @@ async def generate_ui(request: GenerateRequest):
                         "role": "user",
                         "content": build_ui_user_prompt(request.query, data_context),
                     },
+                ],
+                stream=True,
+                max_tokens=4000,
+                api_key=settings.openai_api_key,
+            )
+
+            async for chunk in response:
+                if (
+                    hasattr(chunk.choices[0].delta, "content")
+                    and chunk.choices[0].delta.content
+                ):
+                    content = chunk.choices[0].delta.content
+                    yield f"event: ui\ndata: {json.dumps({'content': content})}\n\n"
+
+            yield f"event: done\ndata: {{}}\n\n"
+
+        except Exception as e:
+            yield f"event: error\ndata: {json.dumps({'message': str(e)})}\n\n"
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+        },
+    )
+
+
+@app.post("/api/refine")
+async def refine_ui(request: RefineRequest):
+    """
+    Refine an existing UI based on user feedback.
+    Takes the current HTML and generates an improved version.
+    """
+    async def event_stream() -> AsyncGenerator[str, None]:
+        try:
+            yield f"event: data\ndata: {json.dumps(request.dataContext)}\n\n"
+
+            system_prompt = f"""You are refining an existing UI based on user feedback.
+
+Original Query: {request.query}
+
+Current HTML:
+{request.currentHtml}
+
+## Instructions
+- Output raw HTML only (no markdown, code blocks)
+- Use the same data context and component structure
+- Maintain <data-value> and <component-slot> syntax
+- Improve based on the user's refinement request
+- Keep the same overall intent but adjust presentation
+- Tailwind CSS, dark theme (bg-zinc-950)
+
+Generate the refined UI:"""
+
+            response = await acompletion(
+                model=settings.model,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": request.query},
                 ],
                 stream=True,
                 max_tokens=4000,

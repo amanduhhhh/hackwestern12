@@ -16,6 +16,7 @@ const PRESETS = [
 
 export default function GeneratePage() {
   const [query, setQuery] = useState('');
+  const [refineQuery, setRefineQuery] = useState('');
   const {
     isStreaming,
     dataContext,
@@ -23,13 +24,21 @@ export default function GeneratePage() {
     rawResponse,
     error,
     startStream,
-    reset
+    reset,
+    refineStream
   } = useStreamStore();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!query.trim() || isStreaming) return;
     startStream(query);
+  };
+
+  const handleRefine = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!refineQuery.trim() || isStreaming || !rawResponse) return;
+    refineStream(refineQuery);
+    setRefineQuery('');
   };
 
   const handleInteraction = (type: string, payload: InteractionPayload) => {
@@ -94,7 +103,27 @@ export default function GeneratePage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 h-[calc(100vh-140px)]">
         <div className="border-r border-zinc-800 overflow-auto">
           <div className="p-4">
-            <h2 className="text-sm font-medium text-zinc-400 mb-4">Rendered Output</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-medium text-zinc-400">Rendered Output</h2>
+              {!isStreaming && htmlContent && (
+                <form onSubmit={handleRefine} className="flex gap-2">
+                  <input
+                    type="text"
+                    value={refineQuery}
+                    onChange={(e) => setRefineQuery(e.target.value)}
+                    placeholder="Refine: e.g., make it more compact"
+                    className="text-xs bg-zinc-800 border border-zinc-700 rounded px-3 py-1.5 text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-500 w-64"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!refineQuery.trim()}
+                    className="text-xs px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-zinc-700 disabled:cursor-not-allowed rounded transition-colors"
+                  >
+                    Refine
+                  </button>
+                </form>
+              )}
+            </div>
             {htmlContent ? (
               <div className="bg-zinc-900 rounded-lg overflow-hidden">
                 <HybridRenderer

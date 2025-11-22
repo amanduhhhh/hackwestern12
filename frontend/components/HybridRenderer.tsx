@@ -71,12 +71,10 @@ export function HybridRenderer({
   const onInteractionRef = useRef(onInteraction);
   const dataContextRef = useRef(dataContext);
 
-  // Sync update dataContext ref before effects run
-  dataContextRef.current = dataContext;
-
   useEffect(() => {
     onLogRef.current = onLog;
     onInteractionRef.current = onInteraction;
+    dataContextRef.current = dataContext;
   });
 
   const log = useCallback((
@@ -171,7 +169,7 @@ export function HybridRenderer({
         try {
           root.unmount();
         } catch {
-          // Ignore - already unmounted
+          // Already unmounted
         }
       });
     });
@@ -181,11 +179,23 @@ export function HybridRenderer({
     return () => cleanupRoots();
   }, [cleanupRoots]);
 
+  const prevHtmlRef = useRef<string>('');
+
   useEffect(() => {
     if (!htmlContent) {
       cleanupRoots();
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsReady(false);
+      prevHtmlRef.current = '';
+    } else {
+      // Detect fresh render vs streaming append
+      const isStreaming = htmlContent.startsWith(prevHtmlRef.current) && htmlContent.length > prevHtmlRef.current.length;
+
+      if (prevHtmlRef.current && !isStreaming) {
+        // Content replaced entirely - clear old state
+        cleanupRoots();
+      }
+      prevHtmlRef.current = htmlContent;
     }
   }, [htmlContent, cleanupRoots]);
 
@@ -201,16 +211,10 @@ export function HybridRenderer({
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = sanitized;
 
-    const existingWrapperIds = new Set<string>();
-    container.querySelectorAll('.hybrid-slot[data-slot-id]').forEach(wrapper => {
-      const id = wrapper.getAttribute('data-slot-id');
-      if (id) existingWrapperIds.add(id);
-    });
-
-    // Convert already-mounted component-slots to placeholders so morphdom preserves React roots
+    // Convert component-slots to placeholders only if they have active React roots
     tempDiv.querySelectorAll('component-slot').forEach((slot) => {
       const slotId = generateSlotId(slot);
-      if (existingWrapperIds.has(slotId)) {
+      if (rootsRef.current.has(slotId)) {
         const placeholder = document.createElement('div');
         placeholder.className = 'hybrid-slot';
         placeholder.setAttribute('data-slot-id', slotId);
