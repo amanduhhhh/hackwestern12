@@ -55,7 +55,7 @@ class SlotErrorBoundary extends React.Component<
 
 const DOMPURIFY_CONFIG = {
   ADD_TAGS: ['component-slot', 'data-value'],
-  ADD_ATTR: ['type', 'data-source', 'config', 'interaction', 'slot-id'],
+  ADD_ATTR: ['type', 'data-source', 'config', 'click-prompt', 'slot-id'],
 };
 
 export function HybridRenderer({
@@ -112,21 +112,19 @@ export function HybridRenderer({
       const dataSource = slot.getAttribute('data-source');
       const data = resolveDataSource(dataContextRef.current, dataSource);
       const config = parseConfig(slot.getAttribute('config'));
-      const interaction = slot.getAttribute('interaction');
+      const clickPrompt = slot.getAttribute('click-prompt');
 
       log('resolve', `Data resolved for ${componentType}`, {
         componentType,
         dataResolved: data !== null,
       });
 
-      const handleInteraction = (
-        type: string,
-        payload: Omit<InteractionPayload, 'componentType' | 'interaction'>
-      ) => {
-        onInteractionRef.current(type, {
+      const handleInteraction = (payload: { clickedData: unknown }) => {
+        onInteractionRef.current('click', {
           componentType,
-          interaction,
-          ...payload,
+          clickPrompt,
+          slotId,
+          clickedData: payload.clickedData,
         });
       };
 
@@ -141,7 +139,9 @@ export function HybridRenderer({
       const componentProps: ComponentProps = {
         data,
         config,
-        onInteraction: handleInteraction,
+        clickPrompt: clickPrompt || undefined,
+        slotId,
+        onInteraction: clickPrompt ? handleInteraction : undefined,
       };
 
       log('mount', `Mounting ${componentType}`, {

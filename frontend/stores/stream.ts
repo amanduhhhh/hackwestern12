@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import type { DataContext } from '@/components/types';
+import type { DataContext, InteractionPayload } from '@/components/types';
+import { useToastStore } from './toast';
 
 interface StreamState {
   isStreaming: boolean;
@@ -11,6 +12,7 @@ interface StreamState {
 
   startStream: (query: string) => void;
   refineStream: (query: string) => void;
+  handleInteraction: (type: string, payload: InteractionPayload) => void;
   reset: () => void;
 }
 
@@ -25,6 +27,8 @@ export const useStreamStore = create<StreamState>((set, get) => ({
   currentQuery: '',
 
   startStream: async (query: string) => {
+    const { addToast, removeToast } = useToastStore.getState();
+
     set({
       isStreaming: true,
       dataContext: {},
@@ -33,6 +37,8 @@ export const useStreamStore = create<StreamState>((set, get) => ({
       error: null,
       currentQuery: query,
     });
+
+    const thinkingId = addToast('Generating...', 'thinking');
 
     try {
       const response = await fetch(`${API_URL}/api/generate`, {
@@ -80,11 +86,16 @@ export const useStreamStore = create<StreamState>((set, get) => ({
                   rawResponse: state.rawResponse + data.content,
                 });
                 break;
+              case 'status':
+                addToast(data.message, 'status');
+                break;
               case 'error':
                 set({ error: data.message, isStreaming: false });
+                addToast(data.message, 'error');
                 break;
               case 'done':
                 set({ isStreaming: false });
+                removeToast(thinkingId);
                 break;
             }
 
@@ -94,11 +105,15 @@ export const useStreamStore = create<StreamState>((set, get) => ({
       }
 
       set({ isStreaming: false });
+      removeToast(thinkingId);
     } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
       set({
-        error: err instanceof Error ? err.message : 'Unknown error',
+        error: message,
         isStreaming: false,
       });
+      removeToast(thinkingId);
+      addToast(message, 'error');
     }
   },
 
@@ -114,10 +129,12 @@ export const useStreamStore = create<StreamState>((set, get) => ({
   },
 
   refineStream: async (query: string) => {
+    const { addToast, removeToast } = useToastStore.getState();
     const state = get();
-    
+
     if (!state.rawResponse) {
       set({ error: 'No UI to refine' });
+      addToast('No UI to refine', 'error');
       return;
     }
 
@@ -128,6 +145,8 @@ export const useStreamStore = create<StreamState>((set, get) => ({
       error: null,
       currentQuery: query,
     });
+
+    const thinkingId = addToast('Refining...', 'thinking');
 
     try {
       const response = await fetch(`${API_URL}/api/refine`, {
@@ -179,11 +198,16 @@ export const useStreamStore = create<StreamState>((set, get) => ({
                   rawResponse: currentState.rawResponse + data.content,
                 });
                 break;
+              case 'status':
+                addToast(data.message, 'status');
+                break;
               case 'error':
                 set({ error: data.message, isStreaming: false });
+                addToast(data.message, 'error');
                 break;
               case 'done':
                 set({ isStreaming: false });
+                removeToast(thinkingId);
                 break;
             }
 
@@ -193,11 +217,32 @@ export const useStreamStore = create<StreamState>((set, get) => ({
       }
 
       set({ isStreaming: false });
+      removeToast(thinkingId);
     } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
       set({
-        error: err instanceof Error ? err.message : 'Unknown error',
+        error: message,
         isStreaming: false,
       });
+      removeToast(thinkingId);
+      addToast(message, 'error');
     }
+  },
+
+  handleInteraction: (_type: string, payload: InteractionPayload) => {
+    const { addToast } = useToastStore.getState();
+
+    if (!payload.clickPrompt) {
+      return;
+    }
+
+    addToast('Interaction captured', 'status');
+
+    console.log('Interaction:', {
+      slotId: payload.slotId,
+      clickPrompt: payload.clickPrompt,
+      clickedData: payload.clickedData,
+      componentType: payload.componentType,
+    });
   },
 }));

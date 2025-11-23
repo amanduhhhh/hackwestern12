@@ -106,7 +106,7 @@ For lists, charts, grids. The registry looks up the component type and renders w
   type="List"
   data-source="music::top_songs"
   config='{{"template":{{"primary":"title","secondary":"artist"}}}}'
-  interaction="smart"
+  click-prompt="Dive into this track - show play history, audio features, and similar songs"
 ></component-slot>
 
 <!-- Chart: numerical data visualization -->
@@ -114,7 +114,7 @@ For lists, charts, grids. The registry looks up the component type and renders w
   type="Chart"
   data-source="fitness::by_type"
   config='{{"template":{{"x":"type","y":"calories"}}}}'
-  interaction="hover"
+  click-prompt="Break down this workout type - show trends over time and personal records"
 ></component-slot>
 
 <!-- Grid: image grid with columns -->
@@ -122,33 +122,42 @@ For lists, charts, grids. The registry looks up the component type and renders w
   type="Grid"
   data-source="travel::cities"
   config='{{"template":{{"title":"name","subtitle":"country"}},"columns":3}}'
-  interaction="select"
+  click-prompt="Explore this destination - show trip details, photos, and recommendations"
 ></component-slot>
 
-<!-- Timeline: chronological events -->
+<!-- Timeline: ONLY for chronological/dated events like activities, workouts, history -->
 <component-slot
   type="Timeline"
-  data-source="reading::top_books"
-  config='{{"template":{{"title":"title","description":"author"}}}}'
-  interaction="expand"
+  data-source="fitness::recent_activities"
+  config='{{"template":{{"title":"name","description":"date"}}}}'
+  click-prompt="Show workout details - distance, pace, and heart rate data"
 ></component-slot>
 
-<!-- Card: single object display -->
+<!-- Card: single object display (no click-prompt = not interactive) -->
 <component-slot
   type="Card"
   data-source="user::profile"
   config='{{"template":{{"primary":"name","secondary":"bio"}}}}'
-  interaction="click"
+></component-slot>
+
+<!-- Table: tabular data with multiple columns -->
+<component-slot
+  type="Table"
+  data-source="finance::recent_transactions"
+  config='{{"template":{{"columns":["date","merchant","category","amount","status"]}}}}'
+  click-prompt="Show transaction details and related spending patterns"
 ></component-slot>
 ```
 
 The `config.template` maps the component's display fields to your data's field names. Check the data fields in the context to know what to map.
 
+For interactive elements, add `click-prompt` describing what happens when clicked. Write from user perspective ("Show me...", "Dive into...", "Break down..."). Omit for non-interactive elements.
+
+Check each component's `use_when` field in the registry below to pick the right component for your data.
+
 ## Component Registry
 
 {json.dumps(COMPONENT_SCHEMAS, indent=2)}
-
-Interactions: "click" (tap), "hover" (reveal), "select" (multi), "expand" (collapse), "smart" (contextual)
 
 ## Golden Rule: NO SYNTHETIC DATA
 
@@ -252,7 +261,7 @@ Must NOT:
         type="List"
         data-source="music::top_songs"
         config='{{"template":{{"primary":"title","secondary":"artist"}}}}'
-        interaction="smart"
+        click-prompt="Dive into this track - show play history and similar songs"
       ></component-slot>
     </div>
 
@@ -262,7 +271,7 @@ Must NOT:
         type="Chart"
         data-source="fitness::by_type"
         config='{{"template":{{"x":"type","y":"calories"}}}}'
-        interaction="hover"
+        click-prompt="Break down this workout - show trends and records"
       ></component-slot>
     </div>
   </div>
@@ -273,7 +282,7 @@ Must NOT:
       type="Timeline"
       data-source="reading::top_books"
       config='{{"template":{{"title":"title","description":"author"}}}}'
-      interaction="expand"
+      click-prompt="Show book details - progress and highlights"
     ></component-slot>
   </div>
 </div>

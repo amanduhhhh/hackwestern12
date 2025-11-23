@@ -3,6 +3,8 @@ import logging
 from typing import Optional, Dict, Any, List
 from datetime import datetime
 
+from tool_generator import tool_function
+
 logger = logging.getLogger(__name__)
 
 
@@ -119,6 +121,15 @@ class StravaDataFetcher:
             logger.error(f"Failed to fetch Strava stats: {e}")
             return None
 
+    @tool_function(
+        description="Get user's recent Strava activities with distance, duration, elevation, speed, and heart rate data",
+        params={
+            "limit": {
+                "type": "integer",
+                "description": "Number of activities to return (1-200, default: 10)"
+            }
+        }
+    )
     def get_activities(self, limit: int = 10) -> Optional[List[Dict[str, Any]]]:
         if not self._ensure_token():
             return None
@@ -172,6 +183,10 @@ class StravaDataFetcher:
             logger.error(f"Failed to fetch Strava activities: {e}")
             return None
 
+    @tool_function(
+        description="Get user's complete Strava fitness summary including athlete profile, all-time stats for running/cycling/swimming, and recent activities",
+        params={}
+    )
     def fetch_user_summary(self) -> Optional[Dict[str, Any]]:
         athlete = self.get_athlete()
         if not athlete:

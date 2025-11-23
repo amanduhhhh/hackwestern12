@@ -4,9 +4,9 @@ from fastapi.responses import StreamingResponse, JSONResponse, HTMLResponse
 from pydantic import BaseModel
 from litellm import acompletion
 import json
-import os
-from typing import AsyncGenerator, Optional
+from typing import AsyncGenerator, Optional, Literal
 
+import logging
 from config import get_settings
 from data import MOCK_DATA
 from utils import get_data, sanitize_prompt
@@ -21,12 +21,10 @@ from integrations import (
 )
 from tool_generator import generate_tools_from_fetchers
 
+logger = logging.getLogger(__name__)
+
 app = FastAPI()
 settings = get_settings()
-
-# Set environment variables for litellm
-os.environ["ANTHROPIC_API_KEY"] = settings.anthropic_api_key
-os.environ["OPENAI_API_KEY"] = settings.openai_api_key
 
 spotify_fetcher = SpotifyDataFetcher(
     client_id=settings.spotify_client_id,
@@ -67,23 +65,34 @@ app.add_middleware(
 class GenerateRequest(BaseModel):
     query: str
 
+
+ModelType = Literal[
+    "gpt-5-mini",
+    "gpt-5",
+    "anthropic/claude-sonnet-4-5-20250514",
+]
+
+
 class QueryRequest(BaseModel):
     prompt: str
-    model: str = "gpt-4o-mini"
+    model: ModelType = "gpt-5-mini"
 
 
 @app.post("/api/query")
 async def intelligent_query(request: QueryRequest):
     """Use LiteLLM function calling to dynamically fetch data based on user prompt"""
     prompt = sanitize_prompt(request.prompt)
-    
-    api_key = settings.openai_api_key if "gpt" in request.model else settings.anthropic_api_key
-    
+
+    if request.model.startswith("anthropic/"):
+        api_key = settings.anthropic_api_key
+    else:
+        api_key = settings.openai_api_key
+
     messages = [
         {"role": "system", "content": "You are a helpful assistant that retrieves user data from various sources. Use the available functions to fetch the requested data."},
         {"role": "user", "content": prompt}
     ]
-    
+
     response = completion(
         model=request.model,
         messages=messages,
@@ -91,36 +100,36 @@ async def intelligent_query(request: QueryRequest):
         tool_choice="auto",
         api_key=api_key
     )
-    
+
     response_message = response.choices[0].message
     tool_calls = response_message.tool_calls
-    
+
     if not tool_calls:
         return {"prompt": prompt, "message": response_message.content, "data": {}}
-    
+
     data = {}
     functions_called = []
-    
+
     for tool_call in tool_calls:
         function_name = tool_call.function.name
         function_args = json.loads(tool_call.function.arguments)
         functions_called.append({"function": function_name, "args": function_args})
-        
+
         function_to_call = available_functions.get(function_name)
         if not function_to_call:
             data[function_name] = {"error": f"Unknown function: {function_name}"}
             continue
-        
+
         try:
             if function_args:
                 result = function_to_call(**function_args)
             else:
                 result = function_to_call()
-            
+
             data[function_name] = result
         except Exception as e:
             data[function_name] = {"error": str(e)}
-    
+
     return {"prompt": prompt, "model": request.model, "functions_called": functions_called, "data": data}
 
 
@@ -350,43 +359,142 @@ async def clash_summary(player_tag: str):
     return data
 
 
-@app.post("/api/generate")
-async def generate_ui(request: GenerateRequest):
+@app.post("/api/generate-legacy")
+async def generate_ui_legacy(request: GenerateRequest):
+    """Legacy endpoint using mock data. Use /api/generate for agent-based fetching."""
     async def event_stream() -> AsyncGenerator[str, None]:
         try:
             plan = await plan_and_classify(request.query)
-            
-            # Fetch real data based on sources
-            data_context = {}
-            sources = plan.get("sources", [])
-            
-            # Extract unique namespaces from sources (e.g., "music::top_songs" -> "music")
-            namespaces = set()
-            for source in sources:
-                if "::" in source:
-                    namespace = source.split("::")[0]
-                    namespaces.add(namespace)
-                else:
-                    namespaces.add(source)
-            
-            for namespace in namespaces:
-                if namespace == "music":
-                    if spotify_fetcher.is_authenticated():
-                        spotify_data = spotify_fetcher.fetch_user_data()
-                        if spotify_data:
-                            data_context["music"] = spotify_data
-                        else:
-                            data_context["music"] = MOCK_DATA.get("music", {})
-                    else:
-                        # Fall back to mock data if not authenticated
-                        data_context["music"] = MOCK_DATA.get("music", {})
-                elif namespace in MOCK_DATA:
-                    data_context[namespace] = MOCK_DATA[namespace]
-            
+            data_context = get_data(plan["sources"], MOCK_DATA)
+
             intent = plan.get("intent", "")
             approach = plan.get("approach", "")
 
             yield f"event: data\ndata: {json.dumps(data_context)}\n\n"
+
+            response = await acompletion(
+                model="anthropic/claude-sonnet-4-20250514",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": build_ui_system_prompt(intent, approach),
+                    },
+                    {
+                        "role": "user",
+                        "content": build_ui_user_prompt(request.query, data_context),
+                    },
+                ],
+                stream=True,
+                max_tokens=4000,
+                api_key=settings.anthropic_api_key,
+            )
+
+            async for chunk in response:
+                if (
+                    hasattr(chunk.choices[0].delta, "content")
+                    and chunk.choices[0].delta.content
+                ):
+                    content = chunk.choices[0].delta.content
+                    yield f"event: ui\ndata: {json.dumps({'content': content})}\n\n"
+
+            yield f"event: done\ndata: {{}}\n\n"
+
+        except Exception as e:
+            yield f"event: error\ndata: {json.dumps({'message': str(e)})}\n\n"
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+        },
+    )
+
+
+# Namespace mapping: tool function prefixes → data context keys
+TOOL_TO_NAMESPACE = {
+    "spotify": "music",
+    "stocks": "stocks",
+    "sports": "sports",
+    "strava": "fitness",
+    "clash": "gaming",
+}
+
+
+@app.post("/api/generate")
+async def generate_ui(request: GenerateRequest):
+    async def event_stream() -> AsyncGenerator[str, None]:
+        try:
+            yield f"event: status\ndata: {json.dumps({'message': 'Planning...'})}\n\n"
+            plan = await plan_and_classify(request.query)
+
+            intent = plan.get("intent", "")
+            approach = plan.get("approach", "")
+
+            yield f"event: status\ndata: {json.dumps({'message': 'Fetching data...'})}\n\n"
+
+            agent_prompt = f"""Based on this user query, fetch the relevant data.
+
+Query: {request.query}
+Intent: {intent}
+Suggested sources: {', '.join(plan.get('sources', []))}
+
+Call the appropriate functions to get the data needed."""
+
+            agent_messages = [
+                {
+                    "role": "system",
+                    "content": "You are a data fetching agent. Use the available functions to retrieve user data. Call multiple functions if needed."
+                },
+                {"role": "user", "content": agent_prompt}
+            ]
+
+            agent_response = completion(
+                model="gpt-5-mini",
+                messages=agent_messages,
+                tools=tools,
+                tool_choice="auto",
+                api_key=settings.openai_api_key
+            )
+
+            data_context = {}
+            tool_calls = agent_response.choices[0].message.tool_calls
+
+            if tool_calls:
+                for tool_call in tool_calls:
+                    function_name = tool_call.function.name
+                    function_args = json.loads(tool_call.function.arguments)
+
+                    prefix = function_name.split("_")[0]
+                    namespace = TOOL_TO_NAMESPACE.get(prefix, prefix)
+
+                    function_to_call = available_functions.get(function_name)
+                    if function_to_call:
+                        try:
+                            if function_args:
+                                result = function_to_call(**function_args)
+                            else:
+                                result = function_to_call()
+
+                            if namespace not in data_context:
+                                data_context[namespace] = {}
+
+                            if isinstance(result, dict):
+                                data_context[namespace].update(result)
+                            else:
+                                key = function_name.replace(f"{prefix}_", "")
+                                data_context[namespace][key] = result
+
+                        except Exception as e:
+                            logger.error(f"Tool {function_name} failed: {e}")
+
+            if not data_context:
+                yield f"event: status\ndata: {json.dumps({'message': 'Using sample data...'})}\n\n"
+                data_context = get_data(plan["sources"], MOCK_DATA)
+
+            yield f"event: data\ndata: {json.dumps(data_context)}\n\n"
+            yield f"event: status\ndata: {json.dumps({'message': 'Generating UI...'})}\n\n"
 
             response = await acompletion(
                 model="anthropic/claude-sonnet-4-20250514",

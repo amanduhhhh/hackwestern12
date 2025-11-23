@@ -8,7 +8,7 @@ interface ChartItem {
   [key: string]: string | number | undefined;
 }
 
-export function ChartPlaceholder({ data, config, onInteraction }: ComponentProps) {
+export function ChartPlaceholder({ data, config, clickPrompt, onInteraction }: ComponentProps) {
   const items = (data as ChartItem[]) || [];
   const hasAnimated = useRef(false);
 
@@ -25,6 +25,7 @@ export function ChartPlaceholder({ data, config, onInteraction }: ComponentProps
   }));
 
   const maxValue = Math.max(...points.map(p => p.value), 1);
+  const isInteractive = !!clickPrompt && !!onInteraction;
 
   return (
     <motion.div
@@ -43,8 +44,10 @@ export function ChartPlaceholder({ data, config, onInteraction }: ComponentProps
               animate={{ scaleY: 1 }}
               transition={{ duration: 0.4, delay: shouldAnimate ? index * 0.05 : 0 }}
               style={{ height: `${height}%`, transformOrigin: 'bottom' }}
-              onClick={() => onInteraction('select', { point, index })}
-              className="flex-1 cursor-pointer rounded-t bg-blue-500 transition-colors hover:bg-blue-600"
+              onClick={() => isInteractive && onInteraction({ clickedData: point.original })}
+              className={`flex-1 rounded-t bg-blue-500 transition-colors ${
+                isInteractive ? 'cursor-pointer hover:bg-blue-600' : ''
+              }`}
               title={`${point.label}: ${point.value}`}
             />
           );

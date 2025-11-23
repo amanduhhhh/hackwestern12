@@ -3,6 +3,8 @@ import logging
 from typing import Optional, Dict, Any, List
 from datetime import datetime
 
+from tool_generator import tool_function
+
 logger = logging.getLogger(__name__)
 
 
@@ -20,6 +22,15 @@ class ClashRoyaleDataFetcher:
             return "%23" + tag[1:]
         return "%23" + tag
 
+    @tool_function(
+        description="Get Clash Royale player stats including trophies, wins, losses, and arena",
+        params={
+            "player_tag": {
+                "type": "string",
+                "description": "Player tag with # prefix (e.g., '#JYJQC88', '#89U82VQ0R'). Must be uppercase alphanumeric."
+            }
+        }
+    )
     def get_player(self, player_tag: str) -> Optional[Dict[str, Any]]:
         try:
             encoded_tag = self._encode_tag(player_tag)
@@ -135,6 +146,15 @@ class ClashRoyaleDataFetcher:
             logger.error(f"Failed to fetch Clash Royale deck: {e}")
             return None
 
+    @tool_function(
+        description="Get complete Clash Royale player summary including stats, recent battles, current deck, and upcoming chests",
+        params={
+            "player_tag": {
+                "type": "string",
+                "description": "Player tag with # prefix (e.g., '#JYJQC88', '#89U82VQ0R'). Must be uppercase alphanumeric."
+            }
+        }
+    )
     def fetch_user_summary(self, player_tag: str) -> Optional[Dict[str, Any]]:
         player = self.get_player(player_tag)
         if not player:

@@ -4,7 +4,7 @@ import { useRef } from 'react';
 import { motion } from 'framer-motion';
 import type { ComponentProps, CardData } from '../types';
 
-export function CardPlaceholder({ data, config, onInteraction }: ComponentProps) {
+export function CardPlaceholder({ data, config, clickPrompt, onInteraction }: ComponentProps) {
   const cardData = (data as CardData) || {};
   const template = config.template || {};
   const hasAnimated = useRef(false);
@@ -19,13 +19,17 @@ export function CardPlaceholder({ data, config, onInteraction }: ComponentProps)
     ? cardData[template.secondary]
     : cardData.description;
 
+  const isInteractive = !!clickPrompt && !!onInteraction;
+
   return (
     <motion.div
       initial={shouldAnimate ? { opacity: 0, scale: 0.98 } : false}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.3, ease: 'easeOut' }}
-      onClick={() => onInteraction('click', { data: cardData })}
-      className="cursor-pointer overflow-hidden rounded-xl bg-white shadow-sm transition-shadow hover:shadow-md dark:bg-zinc-800"
+      onClick={() => isInteractive && onInteraction({ clickedData: cardData })}
+      className={`overflow-hidden rounded-xl bg-white shadow-sm transition-shadow dark:bg-zinc-800 ${
+        isInteractive ? 'cursor-pointer hover:shadow-md' : ''
+      }`}
     >
       {cardData.image && (
         <div className="aspect-video bg-zinc-200 dark:bg-zinc-700">

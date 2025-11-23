@@ -4,7 +4,7 @@ import { useRef } from 'react';
 import { motion } from 'framer-motion';
 import type { ComponentProps, ListItem } from '../types';
 
-export function ListPlaceholder({ data, config, onInteraction }: ComponentProps) {
+export function ListPlaceholder({ data, config, clickPrompt, onInteraction }: ComponentProps) {
   const rawItems = (data as (ListItem | string | number)[]) || [];
   const template = config.template || { primary: 'title', secondary: 'subtitle' };
   const hasAnimated = useRef(false);
@@ -18,6 +18,8 @@ export function ListPlaceholder({ data, config, onInteraction }: ComponentProps)
     }
     return { id: idx, value: item } as ListItem;
   });
+
+  const isInteractive = !!clickPrompt && !!onInteraction;
 
   return (
     <motion.div
@@ -38,8 +40,10 @@ export function ListPlaceholder({ data, config, onInteraction }: ComponentProps)
             initial={shouldAnimate ? { opacity: 0, x: -8 } : false}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.2, delay: shouldAnimate ? index * 0.05 : 0 }}
-            onClick={() => onInteraction('select', { item, index })}
-            className="cursor-pointer rounded bg-zinc-800 p-3 transition-colors hover:bg-zinc-700"
+            onClick={() => isInteractive && onInteraction({ clickedData: item })}
+            className={`rounded bg-zinc-800 p-3 transition-colors ${
+              isInteractive ? 'cursor-pointer hover:bg-zinc-700' : ''
+            }`}
           >
             <div className="font-medium text-zinc-100">
               {String(primaryValue ?? '')}

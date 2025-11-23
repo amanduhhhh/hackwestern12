@@ -1,9 +1,19 @@
 # AI Generation Flow
 
+## Architecture
+
+Two main endpoints:
+- **`/api/generate`** - Main UI generation (uses mock data for now)
+- **`/api/query`** - Agent with tool calling for dynamic data fetching
+
+The goal is to merge these: `/api/generate` will use the agent approach internally.
+
+---
+
 ## Pipeline Stages
 
 ```
-User Query → Planning → Data Fetch → Description → UI Generation → Streaming → Hydration
+User Query → Planning → Agent Data Fetch → Description → UI Generation → Streaming → Hydration
 ```
 
 ---
@@ -28,28 +38,57 @@ User Query → Planning → Data Fetch → Description → UI Generation → Str
 
 ---
 
-### Stage 2: Data Fetch
+### Stage 2: Agent Data Fetch
 
-**Input**: List of sources from planning
+**Current (Mock)**:
 ```python
-["music::top_songs", "music::total_minutes", "music::top_genres"]
+data_context = get_data(plan["sources"], MOCK_DATA)
 ```
 
-**Output**: Data context object (sent to frontend + used for description)
+**Future (Agent with Tools)**:
+
+The `/api/query` endpoint demonstrates how this will work:
+
 ```python
-{
-  "music": {
-    "top_songs": [
-      {"title": "Blinding Lights", "artist": "The Weeknd", "plays": 342},
-      {"title": "Levitating", "artist": "Dua Lipa", "plays": 289}
-    ],
-    "total_minutes": 87234,
-    "top_genres": ["Pop", "Electronic", "Hip-Hop"]
-  }
-}
+# LLM decides which tools to call based on user query
+response = completion(
+    model="gpt-4.1-mini",
+    messages=[...],
+    tools=tools,  # Generated from fetchers via @tool_function decorators
+    tool_choice="auto"  # LLM decides, can call multiple in parallel
+)
+
+# Execute tool calls
+for tool_call in response.tool_calls:
+    function_name = tool_call.function.name  # e.g., "spotify_fetch_user_data"
+    function_args = json.loads(tool_call.function.arguments)
+    result = available_functions[function_name](**function_args)
+    data[function_name] = result
 ```
 
-**What happens**: Currently pulls from `MOCK_DATA`. Future: agentic tool calls to Spotify, Strava, etc.
+**Available Tools** (generated from fetchers):
+- `spotify_fetch_user_data` - Top songs, artists, genres, listening time
+- `stocks_fetch_stock_info` - Stock price and company info
+- `stocks_fetch_portfolio_data` - Multiple stock performance
+- `strava_fetch_user_summary` - Workout stats
+- `strava_get_activities` - Recent activities
+- `sports_fetch_user_sports_summary` - Team stats
+- `clash_fetch_user_summary` - Game stats
+
+**Tool Definition** (with `@tool_function` decorator):
+```python
+@tool_function(
+    description="Get real-time stock price, volume, and company info for a ticker symbol",
+    params={
+        "symbol": {
+            "type": "string",
+            "description": "Stock ticker symbol (e.g., AAPL, TSLA, GOOGL)"
+        }
+    }
+)
+def fetch_stock_info(self, symbol: str):
+    ...
+```
 
 ---
 
@@ -180,25 +219,37 @@ event: data
 data: {"music": {"top_songs": [...], "total_minutes": 87234}}
 ```
 
-2. `ui` events (many, streaming):
+2. `status` events (optional, for progress):
+```
+event: status
+data: {"message": "Planning UI..."}
+
+event: status
+data: {"message": "Fetching Spotify data..."}
+```
+
+3. `ui` events (many, streaming):
 ```
 event: ui
 data: {"content": "<div class=\"min-h-screen"}
 
 event: ui
 data: {"content": " bg-zinc-950 p-6\">"}
-
-event: ui
-data: {"content": "\n  <div class=\"mb-10\">"}
 ```
 
-3. `done` event (once, last):
+4. `error` event (on failure):
+```
+event: error
+data: {"message": "Failed to fetch data"}
+```
+
+5. `done` event (once, last):
 ```
 event: done
 data: {}
 ```
 
-**What happens**: Backend streams as LLM generates. Frontend accumulates HTML chunks.
+**What happens**: Backend streams as LLM generates. Frontend accumulates HTML chunks and shows status as toasts.
 
 ---
 
@@ -229,18 +280,66 @@ data: {}
 **Component Registry** (`frontend/components/registry.ts`):
 ```typescript
 export const COMPONENT_REGISTRY = {
-  List: ListComponent,
-  Card: CardComponent,
-  Chart: ChartComponent,
-  Grid: GridComponent,
-  Timeline: TimelineComponent,
+  List: ListPlaceholder,
+  Card: CardPlaceholder,
+  Chart: ChartPlaceholder,
+  Grid: GridPlaceholder,
+  Timeline: TimelinePlaceholder,
+  Table: TablePlaceholder,
 };
 ```
 
 Each component receives:
 - `data`: Resolved from dataContext via namespace::key
 - `config`: Parsed from config attribute (includes template mapping)
-- `onInteraction`: Callback for user interactions
+- `clickPrompt`: Optional prompt describing what clicking does
+- `slotId`: Unique identifier for the slot
+- `onInteraction`: Callback when user clicks (if clickPrompt exists)
+
+---
+
+## Interaction System
+
+Components can be interactive via `click-prompt`:
+
+```html
+<component-slot
+  type="List"
+  data-source="music::top_songs"
+  config='{"template":{"primary":"title","secondary":"artist"}}'
+  click-prompt="Dive into this track - show play history and similar songs"
+></component-slot>
+```
+
+**Flow**:
+1. User clicks item in component
+2. Component calls `onInteraction({ clickedData: item })`
+3. HybridRenderer packages: `{ slotId, clickPrompt, clickedData, componentType }`
+4. Toast shows "Interaction captured"
+5. Future: POST `/api/interact` → regenerate page with expanded data context
+
+**History Stack** (planned):
+- Each interaction pushes current state to history
+- User can navigate back to previous states
+
+---
+
+## Toast Notifications
+
+Status updates via toast system (`/frontend/stores/toast.ts`):
+
+**Types**:
+- `thinking` - Pulsing dot, persists until removed (for ongoing operations)
+- `status` - Green dot, auto-dismiss 3s (for progress updates)
+- `error` - Red dot, auto-dismiss 3s
+
+**SSE Integration**:
+```python
+# Backend can send status events
+yield f"event: status\ndata: {json.dumps({'message': 'Planning UI...'})}\n\n"
+```
+
+Frontend shows these as toasts automatically.
 
 ---
 
@@ -268,28 +367,62 @@ Each component receives:
 Total first-token: ~800ms
 Total complete: ~4-6s
 
-## Future: Agentic Data Fetching
+## Endpoint Consolidation
 
-Replace static `get_data()` with tool-calling agent:
+Current state has many direct API routes (`/api/spotify/data`, `/api/stocks/{symbol}`, etc.) that duplicate agent capabilities. These exist for:
+- OAuth flows (Spotify requires `/callback`)
+- Direct testing during development
+- Fallback if agent approach fails
+
+**Target architecture**: Two main endpoints
+- `/api/generate` - Full pipeline with agent data fetch
+- `/api/query` - Direct agent access for testing
+
+All data fetching should go through the agent, which uses tool calling to dynamically fetch what's needed.
+
+---
+
+## Agent Integration (In Progress)
+
+The `/api/query` endpoint demonstrates tool-calling. Next step: merge into `/api/generate`:
 
 ```python
-# Agent has access to:
-tools = [
-    fetch_spotify_data,
-    fetch_strava_activities,
-    fetch_stock_portfolio,
-    search_sports_team,
-]
+@app.post("/api/generate")
+async def generate_ui(request: GenerateRequest):
+    async def event_stream():
+        # Stage 1: Planning
+        plan = await plan_and_classify(request.query)
 
-# Planning stage returns tool calls instead of static sources
-# Agent executes tools in parallel where possible
-# Results become data context
+        # Stage 2: Agent data fetch (NEW)
+        yield f"event: status\ndata: {json.dumps({'message': 'Fetching data...'})}\\n\\n"
+
+        response = completion(
+            model="gpt-5-mini",
+            messages=[...],
+            tools=tools,
+            tool_choice="auto"
+        )
+
+        data_context = {}
+        for tool_call in response.tool_calls:
+            result = available_functions[tool_call.function.name](**args)
+            # Map tool results to namespaced data context
+            data_context[namespace] = result
+
+        # Stage 3-6: Continue with UI generation...
 ```
 
-Benefits:
+**Benefits over static `get_data()`**:
 - Dynamic data based on user query
 - Cross-source correlations ("compare my running to my music tempo")
+- Parallel tool execution where possible
 - Graceful fallbacks when APIs fail
+
+**Remaining work**:
+1. Add `@tool_function` decorators to all fetcher methods
+2. Map tool results to proper namespaces (spotify → music, etc.)
+3. Handle partial failures gracefully
+4. Remove mock data fallback in production
 
 ## Error Handling
 
