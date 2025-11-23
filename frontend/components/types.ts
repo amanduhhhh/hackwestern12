@@ -59,12 +59,18 @@ export interface TimelineEvent {
   timestamp?: string;
 }
 
+export interface CalendarDate {
+  date: string;
+  description: string;
+}
+
 export type ComponentData =
   | ListItem[]
   | CardData
   | ChartDataPoint[]
   | GridItem[]
   | TimelineEvent[]
+  | CalendarDate[]
   | null;
 
 export interface ComponentConfig {

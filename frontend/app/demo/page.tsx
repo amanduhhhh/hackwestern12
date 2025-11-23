@@ -9,6 +9,7 @@ import { Timeline } from '@/components/core/Timeline';
 import { LineChart } from '@/components/core/LineChart';
 import { BarChart } from '@/components/core/BarChart';
 import { VinylCard } from '@/components/core/VinylCard';
+import { Calendar } from '@/components/core/Calendar';
 import type { ThemeName } from '@/components/types';
 import { TrendingUp, Users, DollarSign, Activity } from 'lucide-react';
 
@@ -48,6 +49,15 @@ const mockPieData = [
     { label: 'Desktop', value: 45 },
     { label: 'Mobile', value: 35 },
     { label: 'Tablet', value: 20 },
+];
+
+const mockCalendarData = [
+    { date: '2024-01-15', description: 'Team meeting at 2 PM' },
+    { date: '2024-01-18', description: 'Project deadline - submit final report' },
+    { date: '2024-01-20', description: 'Client presentation' },
+    { date: '2024-01-22', description: 'Quarterly review' },
+    { date: '2024-01-25', description: 'Design sprint kickoff' },
+    { date: '2024-01-28', description: 'Code review session' },
 ];
 
 export default function DemoPage() {
@@ -192,15 +202,20 @@ export default function DemoPage() {
                 </section>
 
 
-                    {/* Vinyl Section */}
+                    {/* Specials Section */}
                     <section>
-                        <h2 className="text-2xl font-bold text-foreground mb-6"> Vinyl Card</h2>
-                        <div className="flex justify-center">
-                            <VinylCard
-                                title="Blinding Lights"
-                                artist="The Weeknd"
-                                label="Most Played"
-                            />
+                        <h2 className="text-2xl font-bold text-foreground mb-6"> Specials</h2>
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div className="flex justify-center">
+                                <VinylCard
+                                    title="Blinding Lights"
+                                    artist="The Weeknd"
+                                    label="Most Played"
+                                />
+                            </div>
+                            <div className="flex justify-center">
+                                <Calendar dates={mockCalendarData} />
+                            </div>
                         </div>
                     </section>
 

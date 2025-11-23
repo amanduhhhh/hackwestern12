@@ -17,7 +17,9 @@ import {
     Zap,
     Feather,
     ChevronRight,
-    Box
+    Box,
+    Edit,
+    ChevronUp
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -44,14 +46,20 @@ export default function HomePage() {
     const [activeTab, setActiveTab] = useState<'app' | 'code'>('app');
     const [mosaicExited, setMosaicExited] = useState(false);
     const [mosaicHasBeenHidden, setMosaicHasBeenHidden] = useState(false);
+    const [isEditOpen, setIsEditOpen] = useState(false);
+    const [editQuery, setEditQuery] = useState('');
+    const [windowContent, setWindowContent] = useState<{ htmlContent: string; dataContext: any } | null>(null);
 
     const {
         isStreaming,
         dataContext,
         htmlContent,
         rawResponse,
+        thinkingMessages,
+        toolCalls,
         startStream,
         reset,
+        refineStream,
     } = useStreamStore();
 
     const { currentTheme, setTheme } = useThemeStore();
@@ -72,18 +80,34 @@ export default function HomePage() {
         }
     }, [isFocused, mosaicHasBeenHidden]);
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!query.trim() || isStreaming) return;
-        startStream(query);
-    };
 
     const handleSuggestionClick = (suggestion: string) => {
         setQuery(suggestion);
         startStream(suggestion);
     };
 
-    const hasContent = htmlContent || isStreaming;
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!query.trim() || isStreaming) return;
+        startStream(query);
+        setQuery('');
+    };
+
+    const handleEditSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!editQuery.trim() || isStreaming) return;
+        refineStream(editQuery);
+        setEditQuery('');
+        setIsEditOpen(false);
+    };
+
+    useEffect(() => {
+        if (htmlContent) {
+            setWindowContent({ htmlContent, dataContext });
+        }
+    }, [htmlContent, dataContext]);
+
+    const hasContent = htmlContent || isStreaming || windowContent !== null;
 
     return (
         <div className="relative min-h-screen w-full overflow-hidden bg-black text-white selection:bg-white/20">
@@ -100,146 +124,228 @@ export default function HomePage() {
                 <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20" />
             </div>
 
+            {/* Thinking Indicator - Fixed Top Right */}
+            <AnimatePresence>
+                {isStreaming && (
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.8 }}
+                        className="fixed top-6 right-6 z-50"
+                    >
+                        <div className="group relative">
+                            <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-xl border border-white/20 shadow-2xl flex items-center justify-center cursor-pointer">
+                                <motion.div
+                                    animate={{
+                                        scale: [1, 1.2, 1],
+                                        opacity: [0.6, 1, 0.6],
+                                    }}
+                                    transition={{
+                                        duration: 1.5,
+                                        repeat: Infinity,
+                                        ease: "easeInOut"
+                                    }}
+                                    className="w-6 h-6 rounded-full bg-white/90"
+                                />
+                            </div>
+                            
+                            {/* Hover Tooltip */}
+                            <div className="absolute top-full right-0 mt-2 w-80 bg-white/10 backdrop-blur-xl border border-white/10 rounded-lg shadow-2xl p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-auto">
+                                <div className="text-xs font-medium text-white/90 mb-3">Mosaic thinking...</div>
+                                
+                                <div className="space-y-1.5 max-h-96 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] font-mono text-[11px]">
+                                    {thinkingMessages.map((msg, i) => (
+                                        <div key={i} className="text-white/70">
+                                            <span className="text-white/50">*</span> {msg.message}
+                                        </div>
+                                    ))}
+                                    
+                                    {toolCalls.map((call, i) => (
+                                        <div key={i} className="space-y-0.5">
+                                            <div className="text-blue-400/90">
+                                                <span className="text-white/50">*</span> <span className="text-blue-400/90">&gt;</span> {call.name}
+                                                {call.args && (
+                                                    <span className="text-white/50 ml-1">
+                                                        ({typeof call.args === 'object' ? JSON.stringify(call.args).slice(0, 80) : call.args})
+                                                    </span>
+                                                )}
+                                            </div>
+                                            {call.result && (
+                                                <div className={cn(
+                                                    "ml-4",
+                                                    call.statusCode === 200 ? "text-green-400/90" :
+                                                    call.statusCode && call.statusCode >= 400 ? "text-yellow-400/90" :
+                                                    "text-green-400/90"
+                                                )}>
+                                                    <span className="text-green-400/90">&lt;</span> {call.result}
+                                                    {call.detail && call.detail !== call.result && (
+                                                        <span className="text-white/50 ml-1">- {call.detail}</span>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                    
+                                    {thinkingMessages.length === 0 && toolCalls.length === 0 && (
+                                        <div className="text-white/50">* Planning query...</div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             {/* Main Content Area */}
             <div className="relative z-10 flex flex-col h-screen p-6 gap-6">
 
 
-                {/* Window System */}
+                {/* Single Window - Centered */}
                 <AnimatePresence>
-                    {hasContent && (
+                    {windowContent && (
                         <motion.div
-                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                            transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
-                            className="flex-1 flex gap-6 min-h-0"
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.9 }}
+                            className="fixed bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl overflow-hidden z-30 flex flex-col"
+                            style={{
+                                left: 'calc(50% - 300px)',
+                                top: 'calc(50% - 300px)',
+                                width: '600px',
+                                height: '600px',
+                            }}
                         >
-                            {/* App Window */}
-                            <div className="flex-1 flex flex-col bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl overflow-hidden">
-                                {/* Window Header */}
-                                <div className="flex items-center justify-between px-4 py-3 border-b border-white/5 bg-white/5">
-                                    <div className="flex items-center gap-2">
-                                        <div className="flex gap-1.5">
-                                            <div className="w-3 h-3 rounded-full bg-red-500/80" />
-                                            <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
-                                            <div className="w-3 h-3 rounded-full bg-green-500/80" />
-                                        </div>
-                                    </div>
-
-                                    {/* Theme Tabs */}
-                                    <div className="flex items-center gap-1 bg-black/20 p-1 rounded-lg">
-                                        <button
-                                            onClick={() => setTheme('tokyo-night')}
-                                            className={cn(
-                                                "px-3 py-1 rounded-md text-xs font-medium transition-all flex items-center gap-1.5",
-                                                currentTheme === 'tokyo-night' ? "bg-white/10 text-white shadow-sm" : "text-white/40 hover:text-white/70"
-                                            )}
-                                        >
-                                            <Moon size={12} /> Tokyo
-                                        </button>
-                                        <button
-                                            onClick={() => setTheme('impact')}
-                                            className={cn(
-                                                "px-3 py-1 rounded-md text-xs font-medium transition-all flex items-center gap-1.5",
-                                                currentTheme === 'impact' ? "bg-white/10 text-white shadow-sm" : "text-white/40 hover:text-white/70"
-                                            )}
-                                        >
-                                            <Zap size={12} /> Impact
-                                        </button>
-                                        <button
-                                            onClick={() => setTheme('elegant')}
-                                            className={cn(
-                                                "px-3 py-1 rounded-md text-xs font-medium transition-all flex items-center gap-1.5",
-                                                currentTheme === 'elegant' ? "bg-white/10 text-white shadow-sm" : "text-white/40 hover:text-white/70"
-                                            )}
-                                        >
-                                            <Feather size={12} /> Elegant
-                                        </button>
-                                        <button
-                                            onClick={() => setTheme('neobrutalism')}
-                                            className={cn(
-                                                "px-3 py-1 rounded-md text-xs font-medium transition-all flex items-center gap-1.5",
-                                                currentTheme === 'neobrutalism' ? "bg-white/10 text-white shadow-sm" : "text-white/40 hover:text-white/70"
-                                            )}
-                                        >
-                                            <Box size={12} /> Neo
-                                        </button>
-                                    </div>
-
-                                    <div className="flex items-center gap-2">
-                                        <button
-                                            onClick={() => setShowTerminal(!showTerminal)}
-                                            className={cn(
-                                                "p-1.5 rounded-md transition-colors",
-                                                showTerminal ? "bg-white/10 text-white" : "text-white/40 hover:text-white/70"
-                                            )}
-                                        >
-                                            <Terminal size={14} />
-                                        </button>
-                                    </div>
+                            <div className="flex items-center justify-between px-3 py-2 border-b border-white/5 bg-white/5 shrink-0">
+                                <div className="flex items-center gap-1.5">
+                                    <div className="w-2 h-2 rounded-full bg-red-500/80" />
+                                    <div className="w-2 h-2 rounded-full bg-yellow-500/80" />
+                                    <div className="w-2 h-2 rounded-full bg-green-500/80" />
                                 </div>
-
-                                {/* App Content */}
-                                <div className="flex-1 overflow-hidden p-4 relative [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                                    <div className="h-full overflow-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                                        {htmlContent ? (
-                                            <HybridRenderer
-                                                htmlContent={htmlContent}
-                                                dataContext={dataContext}
-                                                onInteraction={() => { }}
-                                            />
-                                        ) : (
-                                            <div className="flex items-center justify-center h-full text-white/20">
-                                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white" />
-                                            </div>
+                                
+                                {/* Theme Tabs */}
+                                <div className="flex items-center gap-1 bg-black/20 p-1 rounded-lg">
+                                    <button
+                                        onClick={() => setTheme('tokyo-night')}
+                                        className={cn(
+                                            "px-2 py-0.5 rounded text-[10px] font-medium transition-all flex items-center gap-1",
+                                            currentTheme === 'tokyo-night' ? "bg-white/10 text-white" : "text-white/40 hover:text-white/70"
                                         )}
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Terminal Window (Side Panel) */}
-                            <AnimatePresence>
-                                {showTerminal && (
-                                    <motion.div
-                                        initial={{ width: 0, opacity: 0 }}
-                                        animate={{ width: 400, opacity: 1 }}
-                                        exit={{ width: 0, opacity: 0 }}
-                                        transition={{ duration: 0.3, ease: "easeInOut" }}
-                                        className="flex flex-col bg-black/80 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl overflow-hidden"
                                     >
-                                        <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-white/5 relative">
-                                            <span className="text-xs font-mono text-white/60 flex items-center gap-2">
-                                                <Terminal size={12} />
-                                                TERMINAL
-                                            </span>
-                                            <div className="flex items-center gap-2">
-                                                <button
-                                                    onClick={() => setShowTerminal(false)}
-                                                    className="w-2 h-2 rounded-full bg-white/40 hover:bg-white/60 transition-colors cursor-pointer"
-                                                    title="Collapse terminal"
-                                                />
-                                                <div className="w-2 h-2 rounded-full bg-white/20" />
-                                            </div>
+                                        <Moon size={10} /> Tokyo
+                                    </button>
+                                    <button
+                                        onClick={() => setTheme('impact')}
+                                        className={cn(
+                                            "px-2 py-0.5 rounded text-[10px] font-medium transition-all flex items-center gap-1",
+                                            currentTheme === 'impact' ? "bg-white/10 text-white" : "text-white/40 hover:text-white/70"
+                                        )}
+                                    >
+                                        <Zap size={10} /> Impact
+                                    </button>
+                                    <button
+                                        onClick={() => setTheme('elegant')}
+                                        className={cn(
+                                            "px-2 py-0.5 rounded text-[10px] font-medium transition-all flex items-center gap-1",
+                                            currentTheme === 'elegant' ? "bg-white/10 text-white" : "text-white/40 hover:text-white/70"
+                                        )}
+                                    >
+                                        <Feather size={10} /> Elegant
+                                    </button>
+                                    <button
+                                        onClick={() => setTheme('neobrutalism')}
+                                        className={cn(
+                                            "px-2 py-0.5 rounded text-[10px] font-medium transition-all flex items-center gap-1",
+                                            currentTheme === 'neobrutalism' ? "bg-white/10 text-white" : "text-white/40 hover:text-white/70"
+                                        )}
+                                    >
+                                        <Box size={10} /> Neo
+                                    </button>
+                                </div>
+                                
+                                <button
+                                    onClick={() => setWindowContent(null)}
+                                    className="p-1 rounded-md hover:bg-white/10 transition-colors"
+                                >
+                                    <X size={12} className="text-white/60" />
+                                </button>
+                            </div>
+                            <div className="flex-1 overflow-hidden p-3 relative [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                                <div className="h-full overflow-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                                    {windowContent.htmlContent ? (
+                                        <HybridRenderer
+                                            htmlContent={windowContent.htmlContent}
+                                            dataContext={windowContent.dataContext}
+                                            onInteraction={() => { }}
+                                        />
+                                    ) : (
+                                        <div className="flex items-center justify-center h-full text-white/20 text-sm">
+                                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white" />
                                         </div>
-                                        <div className="flex-1 overflow-hidden p-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                                            <div className="h-full overflow-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                                                <pre className="font-mono text-xs text-green-400/90 leading-relaxed whitespace-pre-wrap break-words">
-                                                    {rawResponse || "// Waiting for generation..."}
-                                                </pre>
-                                            </div>
-                                        </div>
-                                    </motion.div>
+                                    )}
+                                </div>
+                                
+                                {/* Edit Button - Bottom Right */}
+                                {windowContent.htmlContent && (
+                                    <div className="absolute bottom-3 right-3 z-20">
+                                        <AnimatePresence>
+                                            {isEditOpen ? (
+                                                <motion.div
+                                                    initial={{ opacity: 0, y: 20, scale: 0.9 }}
+                                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                                    exit={{ opacity: 0, y: 20, scale: 0.9 }}
+                                                    className="bg-white/10 backdrop-blur-xl border border-white/10 rounded-lg p-3 shadow-2xl min-w-[250px]"
+                                                >
+                                                    <form onSubmit={handleEditSubmit} className="flex flex-col gap-2">
+                                                        <input
+                                                            type="text"
+                                                            value={editQuery}
+                                                            onChange={(e) => setEditQuery(e.target.value)}
+                                                            placeholder="Refine: e.g., make it more compact"
+                                                            className="w-full bg-white/5 border border-white/10 rounded-md px-2 py-1.5 text-xs text-white/75 placeholder-white/30 focus:outline-none focus:border-white/20"
+                                                            autoFocus
+                                                        />
+                                                        <div className="flex items-center justify-between">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setIsEditOpen(false)}
+                                                                className="text-[10px] text-white/50 hover:text-white/70 transition-colors"
+                                                            >
+                                                                Cancel
+                                                            </button>
+                                                            <button
+                                                                type="submit"
+                                                                disabled={!editQuery.trim() || isStreaming}
+                                                                className="px-2 py-1 text-[10px] bg-white/10 hover:bg-white/20 text-white/70 hover:text-white rounded-md transition-colors disabled:opacity-30"
+                                                            >
+                                                                Refine
+                                                            </button>
+                                                        </div>
+                                                    </form>
+                                                </motion.div>
+                                            ) : (
+                                                <motion.button
+                                                    initial={{ opacity: 0, scale: 0.8 }}
+                                                    animate={{ opacity: 1, scale: 1 }}
+                                                    exit={{ opacity: 0, scale: 0.8 }}
+                                                    onClick={() => setIsEditOpen(true)}
+                                                    className="p-2 bg-white/10 hover:bg-white/15 backdrop-blur-xl border border-white/10 rounded-lg shadow-lg transition-colors"
+                                                    title="Edit/Refine"
+                                                >
+                                                    <Edit size={14} className="text-white/70" />
+                                                </motion.button>
+                                            )}
+                                        </AnimatePresence>
+                                    </div>
                                 )}
-                            </AnimatePresence>
+                            </div>
                         </motion.div>
                     )}
                 </AnimatePresence>
 
-                {/* Bottom Search Area */}
-                <div className={cn(
-                    "flex flex-col items-center justify-center transition-all duration-500 relative",
-                    hasContent ? "h-auto pb-4" : "h-full pb-20"
-                )}>
+
+                {/* Bottom Search Area - Fixed */}
+                <div className="fixed bottom-6 left-0 right-0 flex flex-col items-center justify-center z-50 pointer-events-none">
+                    <div className="w-full max-w-2xl px-6 pointer-events-auto">
 
                     {/* Suggested Prompts */}
                     <AnimatePresence>
@@ -370,6 +476,7 @@ export default function HomePage() {
                             </div>
                         </form>
                     </motion.div>
+                    </div>
                 </div>
             </div>
         </div>

@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import type { DataContext, InteractionPayload } from '@/components/types';
-import { useToastStore } from './toast';
 
 interface StreamState {
   isStreaming: boolean;
@@ -9,6 +8,8 @@ interface StreamState {
   rawResponse: string;
   error: string | null;
   currentQuery: string;
+  thinkingMessages: Array<{ type: string; message: string; timestamp: number }>;
+  toolCalls: Array<{ name: string; args?: any; result?: string; statusCode?: number; detail?: string; timestamp: number }>;
 
   startStream: (query: string) => void;
   refineStream: (query: string) => void;
@@ -25,10 +26,10 @@ export const useStreamStore = create<StreamState>((set, get) => ({
   rawResponse: '',
   error: null,
   currentQuery: '',
+  thinkingMessages: [],
+  toolCalls: [],
 
   startStream: async (query: string) => {
-    const { addToast, removeToast } = useToastStore.getState();
-
     set({
       isStreaming: true,
       dataContext: {},
@@ -36,9 +37,9 @@ export const useStreamStore = create<StreamState>((set, get) => ({
       rawResponse: '',
       error: null,
       currentQuery: query,
+      thinkingMessages: [],
+      toolCalls: [],
     });
-
-    const thinkingId = addToast('Generating...', 'thinking');
 
     try {
       const response = await fetch(`${API_URL}/api/generate`, {
@@ -80,22 +81,79 @@ export const useStreamStore = create<StreamState>((set, get) => ({
               case 'data':
                 set({ dataContext: data });
                 break;
+              case 'thinking':
+                set((state) => ({
+                  thinkingMessages: [...state.thinkingMessages, {
+                    type: data.type || 'thinking',
+                    message: data.message || data.content || '',
+                    timestamp: Date.now()
+                  }]
+                }));
+                break;
+              case 'tool_call':
+                set((state) => ({
+                  toolCalls: [...state.toolCalls, {
+                    name: data.name || '',
+                    args: data.args,
+                    result: undefined,
+                    timestamp: Date.now()
+                  }]
+                }));
+                break;
+              case 'tool_result':
+                set((state) => {
+                  const toolCalls = [...state.toolCalls];
+                  const lastCall = toolCalls[toolCalls.length - 1];
+                  if (lastCall) {
+                    const statusCode = data.status_code || data.statusCode || data.status;
+                    const resultMessage = data.message || data.result || data.detail || 'ok';
+                    
+                    let displayMessage = resultMessage;
+                    if (statusCode === 200) {
+                      displayMessage = `${lastCall.name} ok`;
+                    } else if (statusCode === 401 || statusCode === 403) {
+                      displayMessage = `unauthorized, using sample data`;
+                    } else if (statusCode && statusCode >= 400) {
+                      displayMessage = `${resultMessage} (${statusCode})`;
+                    }
+                    
+                    lastCall.result = displayMessage;
+                    lastCall.statusCode = statusCode;
+                    lastCall.detail = data.detail || data.message || resultMessage;
+                  }
+                  return { toolCalls };
+                });
+                break;
               case 'ui':
+                const wasEmpty = state.htmlContent === '';
                 set({
                   htmlContent: state.htmlContent + data.content,
                   rawResponse: state.rawResponse + data.content,
                 });
+                if (wasEmpty && data.content) {
+                  set((s) => ({
+                    thinkingMessages: [...s.thinkingMessages, {
+                      type: 'status',
+                      message: 'Generating UI...',
+                      timestamp: Date.now()
+                    }]
+                  }));
+                }
                 break;
               case 'status':
-                addToast(data.message, 'status');
+                set((state) => ({
+                  thinkingMessages: [...state.thinkingMessages, {
+                    type: 'status',
+                    message: data.message,
+                    timestamp: Date.now()
+                  }]
+                }));
                 break;
               case 'error':
                 set({ error: data.message, isStreaming: false });
-                addToast(data.message, 'error');
                 break;
               case 'done':
                 set({ isStreaming: false });
-                removeToast(thinkingId);
                 break;
             }
 
@@ -105,7 +163,6 @@ export const useStreamStore = create<StreamState>((set, get) => ({
       }
 
       set({ isStreaming: false });
-      removeToast(thinkingId);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
       set({
@@ -125,16 +182,16 @@ export const useStreamStore = create<StreamState>((set, get) => ({
       rawResponse: '',
       error: null,
       currentQuery: '',
+      thinkingMessages: [],
+      toolCalls: [],
     });
   },
 
   refineStream: async (query: string) => {
-    const { addToast, removeToast } = useToastStore.getState();
     const state = get();
 
     if (!state.rawResponse) {
       set({ error: 'No UI to refine' });
-      addToast('No UI to refine', 'error');
       return;
     }
 
@@ -144,9 +201,9 @@ export const useStreamStore = create<StreamState>((set, get) => ({
       rawResponse: '',
       error: null,
       currentQuery: query,
+      thinkingMessages: [],
+      toolCalls: [],
     });
-
-    const thinkingId = addToast('Refining...', 'thinking');
 
     try {
       const response = await fetch(`${API_URL}/api/refine`, {
@@ -192,14 +249,75 @@ export const useStreamStore = create<StreamState>((set, get) => ({
               case 'data':
                 set({ dataContext: data });
                 break;
+              case 'thinking':
+                set((state) => ({
+                  thinkingMessages: [...state.thinkingMessages, {
+                    type: data.type || 'thinking',
+                    message: data.message || data.content || '',
+                    timestamp: Date.now()
+                  }]
+                }));
+                break;
+              case 'tool_call':
+                set((state) => ({
+                  toolCalls: [...state.toolCalls, {
+                    name: data.name || '',
+                    args: data.args,
+                    result: undefined,
+                    statusCode: undefined,
+                    detail: undefined,
+                    timestamp: Date.now()
+                  }]
+                }));
+                break;
+              case 'tool_result':
+                set((state) => {
+                  const toolCalls = [...state.toolCalls];
+                  const lastCall = toolCalls[toolCalls.length - 1];
+                  if (lastCall) {
+                    const statusCode = data.status_code || data.statusCode || data.status;
+                    const resultMessage = data.message || data.result || data.detail || 'ok';
+                    
+                    let displayMessage = resultMessage;
+                    if (statusCode === 200) {
+                      displayMessage = `${lastCall.name} ok`;
+                    } else if (statusCode === 401 || statusCode === 403) {
+                      displayMessage = `unauthorized, using sample data`;
+                    } else if (statusCode && statusCode >= 400) {
+                      displayMessage = `${resultMessage} (${statusCode})`;
+                    }
+                    
+                    lastCall.result = displayMessage;
+                    lastCall.statusCode = statusCode;
+                    lastCall.detail = data.detail || data.message || resultMessage;
+                  }
+                  return { toolCalls };
+                });
+                break;
               case 'ui':
+                const wasEmpty = currentState.htmlContent === '';
                 set({
                   htmlContent: currentState.htmlContent + data.content,
                   rawResponse: currentState.rawResponse + data.content,
                 });
+                if (wasEmpty && data.content) {
+                  set((s) => ({
+                    thinkingMessages: [...s.thinkingMessages, {
+                      type: 'status',
+                      message: 'Generating UI...',
+                      timestamp: Date.now()
+                    }]
+                  }));
+                }
                 break;
               case 'status':
-                addToast(data.message, 'status');
+                set((state) => ({
+                  thinkingMessages: [...state.thinkingMessages, {
+                    type: 'status',
+                    message: data.message,
+                    timestamp: Date.now()
+                  }]
+                }));
                 break;
               case 'error':
                 set({ error: data.message, isStreaming: false });
@@ -217,26 +335,19 @@ export const useStreamStore = create<StreamState>((set, get) => ({
       }
 
       set({ isStreaming: false });
-      removeToast(thinkingId);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
       set({
         error: message,
         isStreaming: false,
       });
-      removeToast(thinkingId);
-      addToast(message, 'error');
     }
   },
 
   handleInteraction: (_type: string, payload: InteractionPayload) => {
-    const { addToast } = useToastStore.getState();
-
     if (!payload.clickPrompt) {
       return;
     }
-
-    addToast('Interaction captured', 'status');
 
     console.log('Interaction:', {
       slotId: payload.slotId,

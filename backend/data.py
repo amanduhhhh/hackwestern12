@@ -187,6 +187,13 @@ MOCK_DATA = {
             {"day": "Fri", "deep_work": 4, "meetings": 2, "admin": 2},
         ],
     },
+    "calendar": {
+        "events": [
+            {"date": "2025-11-15", "description": "Team meeting at 2 PM"},
+            {"date": "2025-11-18", "description": "Project deadline - submit final report"},
+            {"date": "2025-01-20", "description": "Client presentation"},
+        ],
+    },
 }
 
 
@@ -407,6 +414,20 @@ COMPONENT_SCHEMAS = {
         "example": {
             "data": {"title": "Blinding Lights", "artist": "The Weeknd", "image": "https://..."},
             "config": {"layout": "Most Played", "template": {"primary": "title", "secondary": "artist"}}
+        }
+    },
+    "Calendar": {
+        "description": "Calendar component with date markers. Shows events, deadlines, appointments. Highlights current day.",
+        "size": "400-500px width, 350-400px height. Fixed size.",
+        "data": [{"date": "YYYY-MM-DD", "description": "string - REQUIRED"}],
+        "config": {},
+        "example": {
+            "data": [
+                {"date": "2024-01-15", "description": "Team meeting"},
+                {"date": "2024-01-20", "description": "Project deadline"},
+                {"date": "2024-01-25", "description": "Client presentation"}
+            ],
+            "config": {}
         }
     },
 }
