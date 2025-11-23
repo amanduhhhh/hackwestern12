@@ -6,6 +6,7 @@ import type { ComponentProps, ListItem } from '../types';
 export function ListAdapter({ data, config, onInteraction }: ComponentProps) {
   const items = (data as ListItem[]) || [];
   const template = config.template || { primary: 'title', secondary: 'subtitle' };
+  const size = (config.size as 'sm' | 'md' | 'lg') || 'md';
 
   return (
     <List
@@ -16,6 +17,7 @@ export function ListAdapter({ data, config, onInteraction }: ComponentProps) {
         meta: template.meta,
       }}
       ranked={config.layout === 'ranked'}
+      size={size}
       onItemClick={(item, index) => onInteraction('select', { item, index })}
     />
   );

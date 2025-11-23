@@ -21,6 +21,8 @@ export function CardAdapter({ data, config, onInteraction }: ComponentProps) {
                   config.layout === 'stat' ? 'stat' : 
                   cardData.image ? 'image' :
                   'default';
+  
+  const size = (config.size as 'sm' | 'md' | 'lg') || 'md';
 
   let trend = undefined;
   if (variant === 'stat' && cardData.trend) {
@@ -34,6 +36,7 @@ export function CardAdapter({ data, config, onInteraction }: ComponentProps) {
   return (
     <Card
       variant={variant}
+      size={size}
       title={title ? String(title) : undefined}
       subtitle={description ? String(description) : undefined}
       value={value !== undefined ? String(value) : undefined}

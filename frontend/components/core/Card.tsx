@@ -9,6 +9,7 @@ import type { ThemeName } from '@/components/types';
 
 interface CardProps {
     variant?: 'default' | 'metric' | 'stat' | 'image';
+    size?: 'sm' | 'md' | 'lg';
     icon?: ReactNode;
     title?: string;
     value?: string | number;
@@ -23,6 +24,7 @@ interface CardProps {
 
 export function Card({
     variant = 'default',
+    size = 'md',
     icon,
     title,
     value,
@@ -42,7 +44,10 @@ export function Card({
         themeConfig.styles.card,
         onClick && themeConfig.styles.cardHover,
         theme === 'tokyo-night' && 'hover:shadow-[0_0_15px_3px] hover:shadow-white/20',
-        'p-4 transition-all duration-300',
+        'transition-all duration-300',
+        size === 'sm' && 'p-3',
+        size === 'md' && 'p-4',
+        size === 'lg' && 'p-6',
         className
     );
 

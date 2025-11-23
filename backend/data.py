@@ -264,15 +264,20 @@ TOOL_REGISTRY = {
 
 COMPONENT_SCHEMAS = {
     "List": {
-        "description": "Displays a ranked or unranked list of items with customizable field mapping",
+        "description": "Displays a ranked or unranked vertical list of items with customizable field mapping. Best for top songs, leaderboards, or any ordered data.",
+        "size_info": "sm: ~50px/item, md: ~60px/item (default), lg: ~70px/item. Width: max 700px. Recommended: 3-8 items.",
         "data": [{"id": "string|number", "[any_field]": "any"}],
         "config": {
-            "template": {
-                "primary": "field_name (e.g., 'title', 'name')",
-                "secondary": "field_name (e.g., 'artist', 'description') - optional",
-                "meta": "field_name (e.g., 'plays', 'count') - optional, displays on right"
+            "DATA MAPPING - template": {
+                "description": "Maps your data fields to component display slots",
+                "primary": "field_name for main text (e.g., 'title', 'name') - REQUIRED",
+                "secondary": "field_name for subtitle/description (e.g., 'artist', 'description') - optional",
+                "meta": "field_name for right-aligned metadata (e.g., 'plays', 'count', 'score') - optional"
             },
-            "layout": "'ranked' to show numbered list - optional"
+            "CONSTANTS": {
+                "layout": "'ranked' | omit. Use 'ranked' to show numbered list (1, 2, 3...), omit for plain list",
+                "size": "'sm' | 'md' | 'lg'. Component size variant. md is default. sm=compact, lg=spacious"
+            }
         },
         "example": {
             "data": [
@@ -281,40 +286,48 @@ COMPONENT_SCHEMAS = {
             ],
             "config": {
                 "template": {"primary": "name", "secondary": "artist", "meta": "plays"},
-                "layout": "ranked"
+                "layout": "ranked",
+                "size": "md"
             }
         }
     },
     "Card": {
-        "description": "Single card with flexible field mapping. Supports metric cards (title + value), stat cards (title + value + trend), image cards, or default cards",
-        "data": {"[any_field]": "any"},
+        "description": "Single card component with flexible layouts. Supports metric/stat cards for KPIs, image cards for albums/photos, or default text cards.",
+        "size_info": "sm: 200x100px, md: 300x140px (default), lg: 350x180px. Use in grids of 2-4 cards.",
+        "data": {"[any_field]": "any (can include 'trend': {value: number, label: string} for stat cards)"},
         "config": {
-            "template": {
-                "primary": "field_name for title - optional",
+            "DATA MAPPING - template": {
+                "description": "Maps your data fields to card display slots",
+                "primary": "field_name for title/label - optional",
                 "secondary": "field_name for subtitle/description - optional",
-                "value": "field_name for main value (for metric/stat cards) - optional"
+                "value": "field_name for main metric value (use with metric/stat layouts) - optional"
             },
-            "layout": "'metric' | 'stat' | 'image' | 'default' - optional, affects card style. 'metric' shows title + large value, 'stat' shows title + value + trend, 'image' shows image + title, 'default' shows title + description"
+            "CONSTANTS": {
+                "layout": "'metric' | 'stat' | 'image' | 'default'. Changes card style. metric=large value, stat=value+trend, image=photo, default=text",
+                "size": "'sm' | 'md' | 'lg'. Component size variant. md is default. Affects dimensions and text size"
+            }
         },
         "example_metric": {
             "data": {"label": "Revenue", "amount": "$45,231", "subtitle": "This month"},
-            "config": {"layout": "metric", "template": {"primary": "label", "value": "amount", "secondary": "subtitle"}}
+            "config": {"layout": "metric", "size": "md", "template": {"primary": "label", "value": "amount", "secondary": "subtitle"}}
         },
         "example_stat": {
             "data": {"title": "Conversion Rate", "value": "3.24%", "trend": {"value": 12.5, "label": "+12.5% from last month"}},
-            "config": {"layout": "stat"}
-        },
-        "example_image": {
-            "data": {"title": "Album", "description": "Artist Name", "image": "https://..."},
-            "config": {"layout": "image"}
+            "config": {"layout": "stat", "size": "lg"}
         }
     },
     "Chart": {
-        "description": "Line or bar chart for numerical data visualization. Default is line chart, use layout='bar' for bar chart",
-        "data": [{"label": "string (x-axis)", "value": "number (y-axis)"}],
+        "description": "Line or bar chart for numerical time-series or categorical data visualization. Shows trends or comparisons.",
+        "size_info": "Width: 400-600px. Height: 300px (fixed). Requires minimum 3 data points for meaningful visualization.",
+        "data": [{"label": "string (x-axis category/time)", "value": "number (y-axis metric)"}],
         "config": {
-            "layout": "'bar' for bar chart, omit or 'line' for line chart - optional",
-            "template": {"primary": "chart title/label displayed above chart - optional"}
+            "DATA MAPPING - template": {
+                "description": "Chart title/label",
+                "primary": "chart title/label displayed above chart - optional"
+            },
+            "CONSTANTS": {
+                "layout": "'bar' | 'line'. Chart type. line is default. bar for categorical comparisons, line for trends"
+            }
         },
         "example_line": {
             "data": [
@@ -322,22 +335,24 @@ COMPONENT_SCHEMAS = {
                 {"label": "Feb", "value": 5100},
                 {"label": "Mar", "value": 4800}
             ],
-            "config": {"template": {"primary": "Monthly Revenue"}}
+            "config": {"layout": "line", "template": {"primary": "Monthly Revenue"}}
         },
         "example_bar": {
             "data": [
                 {"label": "Mon", "value": 45},
-                {"label": "Tue", "value": 72},
-                {"label": "Wed", "value": 58}
+                {"label": "Tue", "value": 72}
             ],
             "config": {"layout": "bar", "template": {"primary": "Weekly Activity"}}
         }
     },
     "Grid": {
-        "description": "Grid layout for items with images",
+        "description": "Responsive grid layout for displaying multiple items with images (albums, products, photos).",
+        "size_info": "Width: full container. Item size: 150-250px square. Total height depends on items and columns.",
         "data": [{"id": "string|number", "title": "string - optional", "image": "url - optional"}],
         "config": {
-            "columns": "number (1-6, default 3)"
+            "CONSTANTS": {
+                "columns": "number (1-6, default 3). Sets number of grid columns. Desktop uses specified value, mobile uses 1"
+            }
         },
         "example": {
             "data": [
@@ -348,33 +363,43 @@ COMPONENT_SCHEMAS = {
         }
     },
     "Timeline": {
-        "description": "Vertical timeline of events",
+        "description": "Vertical or horizontal timeline showing chronological events with connecting line. Best for activity history, milestones.",
+        "size_info": "Vertical: width max 700px, height ~100px per event. Horizontal: requires wide space, height ~150px. Recommended: 3-6 events.",
         "data": [
             {
                 "id": "string|number",
-                "title": "string (required)",
-                "description": "string - optional",
-                "timestamp": "string - optional"
+                "title": "string (event name) - REQUIRED",
+                "description": "string (event details) - optional",
+                "timestamp": "string (time/date) - optional"
             }
         ],
-        "config": {},
+        "config": {
+            "CONSTANTS": {
+                "orientation": "'vertical' | 'horizontal'. Layout direction. vertical is default (top-to-bottom). horizontal needs more width"
+            }
+        },
         "example": {
             "data": [
                 {"id": 1, "title": "Event", "description": "Details", "timestamp": "2 hours ago"}
-            ]
+            ],
+            "config": {"orientation": "vertical"}
         }
     },
     "Table": {
-        "description": "Data table with sortable columns",
+        "description": "Data table with sortable columns. Best for structured tabular data, stats, leaderboards.",
+        "size_info": "Width: full container (min 500px recommended). Height: ~50px per row + 60px header. Max 10 rows for readability.",
         "data": [{"[any_field]": "any"}],
         "config": {
-            "columns": [
-                {
-                    "key": "field_name (required)",
-                    "label": "column header (required)",
-                    "sortable": "boolean - optional"
-                }
-            ]
+            "DATA MAPPING - columns": {
+                "description": "Array defining table columns. Each column maps a data field to a table column",
+                "structure": [
+                    {
+                        "key": "field_name from data - REQUIRED",
+                        "label": "column header text - REQUIRED",
+                        "sortable": "boolean - optional. Enables click-to-sort for this column"
+                    }
+                ]
+            }
         },
         "example": {
             "data": [
@@ -385,25 +410,28 @@ COMPONENT_SCHEMAS = {
                 "columns": [
                     {"key": "player", "label": "Player", "sortable": true},
                     {"key": "team", "label": "Team", "sortable": true},
-                    {"key": "points", "label": "PPG", "sortable": true},
-                    {"key": "assists", "label": "APG", "sortable": true}
+                    {"key": "points", "label": "PPG", "sortable": true}
                 ]
             }
         }
     },
     "Vinyl": {
-        "description": "Animated vinyl record card displaying album art with spinning animation. Best for showcasing top songs/albums",
-        "data": {"title": "string", "artist": "string", "image": "url - optional"},
+        "description": "Animated spinning vinyl record card with album art. Eye-catching component for highlighting top song/album. Takes significant vertical space.",
+        "size_info": "Width: ~400px. Height: ~450px with text. Fixed size, use sparingly (1 per view) as focal point.",
+        "data": {"title": "string (song/album name) - REQUIRED", "artist": "string - REQUIRED", "image": "url - optional"},
         "config": {
-            "template": {
+            "DATA MAPPING - template": {
+                "description": "Maps your data fields to vinyl display",
                 "primary": "field_name for song/album title - optional",
-                "secondary": "field_name for artist - optional"
+                "secondary": "field_name for artist name - optional"
             },
-            "layout": "label text (e.g., 'Most Played', 'Top Track') - optional"
+            "CONSTANTS": {
+                "layout": "label text above vinyl (e.g., 'Most Played', 'Top Track', 'Now Playing'). Defaults to 'Most Played'"
+            }
         },
         "example": {
             "data": {"title": "Blinding Lights", "artist": "The Weeknd", "image": "https://..."},
-            "config": {"layout": "Most Played"}
+            "config": {"layout": "Most Played", "template": {"primary": "title", "secondary": "artist"}}
         }
     },
 }

@@ -290,12 +290,12 @@ export default function TestHybridThemedPage() {
           </h1>
           
           <div className="flex gap-2">
-            {(['tokyo-night', 'impact', 'elegant'] as ThemeName[]).map((theme) => (
+            {(['tokyo-night', 'impact', 'elegant', 'neobrutalism'] as ThemeName[]).map((theme) => (
               <button
                 key={theme}
                 onClick={() => setTheme(theme)}
                 className={`px-4 py-2 text-sm font-semibold transition-all ${
-                  theme === 'impact' ? '' : 'rounded-lg'
+                  theme === 'impact' || theme === 'neobrutalism' ? '' : 'rounded-lg'
                 } ${
                   currentTheme === theme
                     ? 'bg-primary text-primary-foreground shadow-lg scale-105'
@@ -305,6 +305,7 @@ export default function TestHybridThemedPage() {
                 {theme === 'tokyo-night' && 'Tokyo Night'}
                 {theme === 'impact' && 'Impact'}
                 {theme === 'elegant' && 'Elegant'}
+                {theme === 'neobrutalism' && 'Neobrutalism'}
               </button>
             ))}
           </div>

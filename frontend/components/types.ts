@@ -71,10 +71,13 @@ export interface ComponentConfig {
   template?: {
     primary?: string;
     secondary?: string;
+    value?: string;
     [key: string]: string | undefined;
   };
   columns?: number;
   layout?: string;
+  size?: 'sm' | 'md' | 'lg';
+  orientation?: string;
 }
 
 export interface InteractionPayload {

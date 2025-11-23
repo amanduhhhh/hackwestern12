@@ -11,6 +11,7 @@ interface ListProps<T = Record<string, unknown>> {
     items: T[];
     template: { primary: string; secondary?: string; meta?: string };
     ranked?: boolean;
+    size?: 'sm' | 'md' | 'lg';
     onItemClick?: (item: T, index: number) => void;
     className?: string;
     theme?: ThemeName;
@@ -20,6 +21,7 @@ export function List<T extends Record<string, unknown>>({
     items,
     template,
     ranked = false,
+    size = 'md',
     onItemClick,
     className,
     theme: propTheme,
@@ -65,10 +67,13 @@ export function List<T extends Record<string, unknown>>({
                                 <div
                                     className={cn(
                                         'shrink-0',
-                                        theme === 'tokyo-night' && 'text-2xl font-bold text-foreground',
-                                        theme === 'impact' && 'text-2xl font-black',
-                                        theme === 'elegant' && 'text-xl font-serif text-muted-foreground',
-                                        theme === 'neobrutalism' && 'text-2xl font-bold text-primary'
+                                        size === 'sm' && 'text-lg',
+                                        size === 'md' && 'text-2xl',
+                                        size === 'lg' && 'text-3xl',
+                                        theme === 'tokyo-night' && 'font-bold text-foreground',
+                                        theme === 'impact' && 'font-black',
+                                        theme === 'elegant' && 'font-serif text-muted-foreground',
+                                        theme === 'neobrutalism' && 'font-bold text-primary'
                                     )}
                                     style={theme === 'impact' ? { color: 'var(--chart-3)' } : undefined}
                                 >
@@ -80,9 +85,12 @@ export function List<T extends Record<string, unknown>>({
                                 <div
                                     className={cn(
                                         'font-medium truncate',
+                                        size === 'sm' && 'text-sm',
+                                        size === 'md' && 'text-base',
+                                        size === 'lg' && 'text-lg',
                                         theme === 'tokyo-night' && 'text-foreground',
-                                        theme === 'impact' && 'font-black uppercase tracking-tight text-sm',
-                                        theme === 'elegant' && 'font-serif text-base',
+                                        theme === 'impact' && 'font-black uppercase tracking-tight',
+                                        theme === 'elegant' && 'font-serif',
                                         theme === 'neobrutalism' && 'font-bold text-foreground'
                                     )}
                                 >
@@ -91,9 +99,12 @@ export function List<T extends Record<string, unknown>>({
                                 {secondaryValue && (
                                     <div
                                         className={cn(
-                                            'text-sm truncate',
+                                            'truncate',
+                                            size === 'sm' && 'text-xs',
+                                            size === 'md' && 'text-sm',
+                                            size === 'lg' && 'text-base',
                                             theme === 'tokyo-night' && 'text-foreground',
-                                            theme === 'impact' && 'font-bold uppercase text-xs mt-0.5 text-muted-foreground',
+                                            theme === 'impact' && 'font-bold uppercase mt-0.5 text-muted-foreground',
                                             theme === 'elegant' && 'text-muted-foreground',
                                             theme === 'neobrutalism' && 'font-medium text-foreground'
                                         )}
@@ -106,9 +117,12 @@ export function List<T extends Record<string, unknown>>({
                             {metaValue && (
                                 <div
                                     className={cn(
-                                        'shrink-0 text-sm',
+                                        'shrink-0',
+                                        size === 'sm' && 'text-xs',
+                                        size === 'md' && 'text-sm',
+                                        size === 'lg' && 'text-base',
                                         theme === 'tokyo-night' && 'font-mono text-foreground',
-                                        theme === 'impact' && 'font-black text-xs text-muted-foreground',
+                                        theme === 'impact' && 'font-black text-muted-foreground',
                                         theme === 'elegant' && 'font-sans text-muted-foreground',
                                         theme === 'neobrutalism' && 'font-bold text-foreground'
                                     )}
