@@ -19,6 +19,15 @@ interface StreamState {
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
+const playSound = (filename: string) => {
+  try {
+    const audio = new Audio(`/sounds/${filename}`);
+    audio.volume = 0.5;
+    audio.play().catch(() => {});
+  } catch (err) {
+  }
+};
+
 export const useStreamStore = create<StreamState>((set, get) => ({
   isStreaming: false,
   dataContext: {},
@@ -30,6 +39,7 @@ export const useStreamStore = create<StreamState>((set, get) => ({
   toolCalls: [],
 
   startStream: async (query: string) => {
+    playSound('start.mp3');
     set({
       isStreaming: true,
       dataContext: {},
@@ -154,6 +164,7 @@ export const useStreamStore = create<StreamState>((set, get) => ({
                 break;
               case 'done':
                 set({ isStreaming: false });
+                playSound('stop.mp3');
                 break;
             }
 
@@ -163,12 +174,14 @@ export const useStreamStore = create<StreamState>((set, get) => ({
       }
 
       set({ isStreaming: false });
+      playSound('stop.mp3');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
       set({
         error: message,
         isStreaming: false,
       });
+      playSound('stop.mp3');
       removeToast(thinkingId);
       addToast(message, 'error');
     }
@@ -195,6 +208,7 @@ export const useStreamStore = create<StreamState>((set, get) => ({
       return;
     }
 
+    playSound('start.mp3');
     set({
       isStreaming: true,
       htmlContent: '',
@@ -321,10 +335,12 @@ export const useStreamStore = create<StreamState>((set, get) => ({
                 break;
               case 'error':
                 set({ error: data.message, isStreaming: false });
+                playSound('stop.mp3');
                 addToast(data.message, 'error');
                 break;
               case 'done':
                 set({ isStreaming: false });
+                playSound('stop.mp3');
                 removeToast(thinkingId);
                 break;
             }
@@ -335,12 +351,14 @@ export const useStreamStore = create<StreamState>((set, get) => ({
       }
 
       set({ isStreaming: false });
+      playSound('stop.mp3');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
       set({
         error: message,
         isStreaming: false,
       });
+      playSound('stop.mp3');
     }
   },
 
