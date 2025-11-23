@@ -56,7 +56,8 @@ export function List<T extends Record<string, unknown>>({
                             onItemClick && 'cursor-pointer',
                             theme === 'tokyo-night' && 'rounded-lg bg-card/30 hover:bg-card/60 backdrop-blur-sm border border-border hover:shadow-[0_0_15px_3px] hover:shadow-white/20',
                             theme === 'impact' && 'bg-linear-to-br from-white to-slate-50 border-l-4 border-primary shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all',
-                            theme === 'elegant' && 'rounded-md bg-card/40 hover:bg-card/60 border border-border/40 shadow-[0_4px_12px_-2px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_20px_-4px_rgba(0,0,0,0.12)] transition-all duration-500'
+                            theme === 'elegant' && 'rounded-md bg-card/40 hover:bg-card/60 border border-border/40 shadow-[0_4px_12px_-2px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_20px_-4px_rgba(0,0,0,0.12)] transition-all duration-500',
+                            theme === 'neobrutalism' && 'rounded-lg bg-card border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:-translate-x-0.5 hover:-translate-y-0.5'
                         )}
                     >
                         <div className="flex items-center gap-3">
@@ -66,7 +67,8 @@ export function List<T extends Record<string, unknown>>({
                                         'shrink-0',
                                         theme === 'tokyo-night' && 'text-2xl font-bold text-foreground',
                                         theme === 'impact' && 'text-2xl font-black',
-                                        theme === 'elegant' && 'text-xl font-serif text-muted-foreground'
+                                        theme === 'elegant' && 'text-xl font-serif text-muted-foreground',
+                                        theme === 'neobrutalism' && 'text-2xl font-bold text-primary'
                                     )}
                                     style={theme === 'impact' ? { color: 'var(--chart-3)' } : undefined}
                                 >
@@ -80,7 +82,8 @@ export function List<T extends Record<string, unknown>>({
                                         'font-medium truncate',
                                         theme === 'tokyo-night' && 'text-foreground',
                                         theme === 'impact' && 'font-black uppercase tracking-tight text-sm',
-                                        theme === 'elegant' && 'font-serif text-base'
+                                        theme === 'elegant' && 'font-serif text-base',
+                                        theme === 'neobrutalism' && 'font-bold text-foreground'
                                     )}
                                 >
                                     {String(primaryValue ?? '')}
@@ -91,7 +94,8 @@ export function List<T extends Record<string, unknown>>({
                                             'text-sm truncate',
                                             theme === 'tokyo-night' && 'text-foreground',
                                             theme === 'impact' && 'font-bold uppercase text-xs mt-0.5 text-muted-foreground',
-                                            theme === 'elegant' && 'text-muted-foreground'
+                                            theme === 'elegant' && 'text-muted-foreground',
+                                            theme === 'neobrutalism' && 'font-medium text-foreground'
                                         )}
                                     >
                                         {String(secondaryValue ?? '')}
@@ -105,7 +109,8 @@ export function List<T extends Record<string, unknown>>({
                                         'shrink-0 text-sm',
                                         theme === 'tokyo-night' && 'font-mono text-foreground',
                                         theme === 'impact' && 'font-black text-xs text-muted-foreground',
-                                        theme === 'elegant' && 'font-sans text-muted-foreground'
+                                        theme === 'elegant' && 'font-sans text-muted-foreground',
+                                        theme === 'neobrutalism' && 'font-bold text-foreground'
                                     )}
                                 >
                                     {String(metaValue)}
@@ -120,6 +125,7 @@ export function List<T extends Record<string, unknown>>({
                     className={cn(
                         'py-8 text-center',
                         theme === 'impact' && 'font-black uppercase tracking-widest',
+                        theme === 'neobrutalism' && 'font-bold',
                         'text-muted-foreground'
                     )}
                 >

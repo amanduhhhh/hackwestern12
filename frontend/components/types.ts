@@ -1,6 +1,6 @@
 import { Variants } from 'framer-motion';
 
-export type ThemeName = 'tokyo-night' | 'impact' | 'elegant';
+export type ThemeName = 'tokyo-night' | 'impact' | 'elegant' | 'neobrutalism';
 
 export interface ThemeConfig {
   fonts: {

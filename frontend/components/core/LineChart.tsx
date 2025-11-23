@@ -44,6 +44,7 @@ export function LineChart({
             label: "Value",
             color: theme === 'tokyo-night' ? 'var(--chart-1)' : 
                    theme === 'impact' ? 'var(--chart-3)' : 
+                   theme === 'neobrutalism' ? 'var(--chart-2)' :
                    'var(--primary)',
         },
     };
@@ -66,6 +67,7 @@ export function LineChart({
                 theme === 'tokyo-night' && 'rounded-lg bg-card/30 border border-border hover:shadow-[0_0_15px_3px] hover:shadow-white/20',
                 theme === 'impact' && 'bg-linear-to-br from-white to-slate-50 hover:shadow-[0_0_15px_3px] hover:shadow-white/20',
                 theme === 'elegant' && 'rounded-md bg-card/40 border border-border/40 shadow-[0_4px_12px_-2px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_20px_-4px_rgba(0,0,0,0.12)] duration-500',
+                theme === 'neobrutalism' && 'rounded-lg bg-card border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:-translate-x-0.5 hover:-translate-y-0.5',
                 className
             )}
         >
@@ -75,7 +77,8 @@ export function LineChart({
                         'mb-4',
                         theme === 'tokyo-night' && 'text-lg font-bold text-foreground',
                         theme === 'impact' && 'text-sm font-black uppercase tracking-widest',
-                        theme === 'elegant' && 'text-lg font-serif text-foreground'
+                        theme === 'elegant' && 'text-lg font-serif text-foreground',
+                        theme === 'neobrutalism' && 'text-base font-bold text-foreground'
                     )}
                 >
                     {label}
@@ -96,11 +99,12 @@ export function LineChart({
                 {showGrid && (
                             <CartesianGrid 
                                 vertical={false}
-                                strokeDasharray={theme === 'impact' ? '0' : '3 3'}
+                                strokeDasharray={theme === 'impact' ? '0' : theme === 'neobrutalism' ? '0' : '3 3'}
                                 className={cn(
                                     theme === 'tokyo-night' && 'stroke-border/30',
                                     theme === 'impact' && 'stroke-primary/10',
-                                    theme === 'elegant' && 'stroke-border/20'
+                                    theme === 'elegant' && 'stroke-border/20',
+                                    theme === 'neobrutalism' && 'stroke-black/20'
                                 )}
                             />
                         )}
@@ -113,7 +117,8 @@ export function LineChart({
                                 tickFormatter={(value) => value.slice(0, 3)}
                                 className={cn(
                                     theme === 'impact' && 'font-bold uppercase text-[10px]',
-                                    theme === 'elegant' && 'font-serif italic'
+                                    theme === 'elegant' && 'font-serif italic',
+                                    theme === 'neobrutalism' && 'font-bold text-[10px]'
                                 )}
                             />
                         )}
@@ -126,19 +131,19 @@ export function LineChart({
                                 key={line.dataKey}
                                 dataKey={line.dataKey}
                                 type="natural"
-                                stroke={line.color || (theme === 'tokyo-night' ? 'var(--chart-1)' : theme === 'impact' ? 'var(--chart-3)' : 'var(--primary)')}
-                                strokeWidth={theme === 'impact' ? 3 : 2}
+                                stroke={line.color || (theme === 'tokyo-night' ? 'var(--chart-1)' : theme === 'impact' ? 'var(--chart-3)' : theme === 'neobrutalism' ? 'var(--chart-2)' : 'var(--primary)')}
+                                strokeWidth={theme === 'impact' ? 3 : theme === 'neobrutalism' ? 3 : 2}
                                 dot={({ cx, cy, payload }) => {
-                                    const r = theme === 'impact' ? 4 : 3;
+                                    const r = theme === 'impact' ? 4 : theme === 'neobrutalism' ? 5 : 3;
                                 return (
                                         <circle
                                             key={payload.label}
                                             cx={cx}
                                             cy={cy}
                                             r={r}
-                                            fill={line.color || (theme === 'tokyo-night' ? 'var(--chart-1)' : theme === 'impact' ? 'var(--chart-3)' : 'var(--primary)')}
-                                            stroke={theme === 'tokyo-night' ? 'var(--background)' : 'white'}
-                                            strokeWidth={2}
+                                            fill={line.color || (theme === 'tokyo-night' ? 'var(--chart-1)' : theme === 'impact' ? 'var(--chart-3)' : theme === 'neobrutalism' ? 'var(--chart-2)' : 'var(--primary)')}
+                                            stroke={theme === 'tokyo-night' ? 'var(--background)' : theme === 'neobrutalism' ? 'black' : 'white'}
+                                            strokeWidth={theme === 'neobrutalism' ? 3 : 2}
                                         className={cn(
                                                 "transition-all duration-300",
                                                 theme === 'tokyo-night' && "hover:r-5 hover:drop-shadow-[0_0_8px_var(--chart-1)]"
@@ -147,8 +152,8 @@ export function LineChart({
                                 );
                                 }}
                                 activeDot={{
-                                    r: theme === 'impact' ? 7 : 5,
-                                    className: theme === 'tokyo-night' ? 'drop-shadow-[0_0_12px_var(--chart-1)]' : ''
+                                    r: theme === 'impact' ? 7 : theme === 'neobrutalism' ? 8 : 5,
+                                    className: theme === 'tokyo-night' ? 'drop-shadow-[0_0_12px_var(--chart-1)]' : theme === 'neobrutalism' ? 'stroke-2 stroke-black' : ''
                                 }}
                         className={cn(
                                     theme === 'tokyo-night' && 'drop-shadow-[0_0_4px_var(--chart-1)]'

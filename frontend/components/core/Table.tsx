@@ -73,6 +73,7 @@ export function Table<T extends Record<string, unknown>>({
                 theme === 'tokyo-night' && 'rounded-lg bg-card/30 border border-border hover:shadow-[0_0_15px_3px] hover:shadow-white/20',
                 theme === 'impact' && 'border-2 border-black hover:shadow-[0_0_15px_3px] hover:shadow-white/20',
                 theme === 'elegant' && 'rounded-md bg-card/40 border border-border/40 shadow-[0_4px_12px_-2px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_20px_-4px_rgba(0,0,0,0.12)] duration-500',
+                theme === 'neobrutalism' && 'rounded-lg bg-card border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:-translate-x-0.5 hover:-translate-y-0.5',
                 className
             )}
         >
@@ -83,7 +84,8 @@ export function Table<T extends Record<string, unknown>>({
                             'border-b',
                             theme === 'tokyo-night' && 'border-border bg-card/50',
                             theme === 'impact' && 'border-black bg-linear-to-r from-slate-50 to-white',
-                            theme === 'elegant' && 'border-border/40 bg-card/10'
+                            theme === 'elegant' && 'border-border/40 bg-card/10',
+                            theme === 'neobrutalism' && 'border-b-2 border-black bg-secondary'
                         )}
                     >
                         {columns.map((column) => (
@@ -95,7 +97,8 @@ export function Table<T extends Record<string, unknown>>({
                                     column.sortable && 'cursor-pointer hover:bg-muted/20 transition-colors',
                                     theme === 'tokyo-night' && 'text-sm font-medium text-muted-foreground',
                                     theme === 'impact' && 'text-xs font-black uppercase tracking-widest',
-                                    theme === 'elegant' && 'text-sm font-serif text-muted-foreground'
+                                    theme === 'elegant' && 'text-sm font-serif text-muted-foreground',
+                                    theme === 'neobrutalism' && 'text-xs font-bold text-foreground'
                                 )}
                                 style={theme === 'impact' ? { color: 'var(--chart-3)' } : undefined}
                             >
@@ -129,7 +132,8 @@ export function Table<T extends Record<string, unknown>>({
                                 'border-b last:border-b-0 transition-colors',
                                 theme === 'tokyo-night' && 'border-border hover:bg-muted/20',
                                 theme === 'impact' && 'border-slate-200 hover:bg-slate-50 even:bg-slate-50/50',
-                                theme === 'elegant' && 'border-border/20 hover:bg-card/10'
+                                theme === 'elegant' && 'border-border/20 hover:bg-card/10',
+                                theme === 'neobrutalism' && 'border-b-2 border-black hover:bg-secondary/30'
                             )}
                         >
                             {columns.map((column) => (
@@ -139,7 +143,8 @@ export function Table<T extends Record<string, unknown>>({
                                         'px-4 py-3',
                                         theme === 'tokyo-night' && 'text-sm text-foreground',
                                         theme === 'impact' && 'text-sm font-bold',
-                                        theme === 'elegant' && 'text-sm font-sans'
+                                        theme === 'elegant' && 'text-sm font-sans',
+                                        theme === 'neobrutalism' && 'text-sm font-medium text-foreground'
                                     )}
                                 >
                                     {String(row[column.key] ?? '')}
@@ -153,7 +158,8 @@ export function Table<T extends Record<string, unknown>>({
                 <div
                     className={cn(
                         'py-8 text-center text-muted-foreground',
-                        theme === 'impact' && 'font-black uppercase tracking-widest'
+                        theme === 'impact' && 'font-black uppercase tracking-widest',
+                        theme === 'neobrutalism' && 'font-bold text-foreground'
                     )}
                 >
                     No data

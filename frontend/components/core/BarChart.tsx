@@ -40,7 +40,7 @@ export function BarChart({
     const config: ChartConfig = {
         value: {
             label: "Value",
-            color: theme === 'tokyo-night' ? 'var(--chart-1)' : 'var(--primary)',
+            color: theme === 'tokyo-night' ? 'var(--chart-1)' : theme === 'neobrutalism' ? 'var(--chart-1)' : 'var(--primary)',
         },
     };
 
@@ -62,6 +62,7 @@ export function BarChart({
                 theme === 'tokyo-night' && 'rounded-lg bg-card/30 border border-border hover:shadow-[0_0_15px_3px] hover:shadow-white/20',
                 theme === 'impact' && 'bg-linear-to-br from-white to-slate-50 hover:shadow-[0_0_15px_3px] hover:shadow-white/20',
                 theme === 'elegant' && 'rounded-md bg-card/40 border border-border/40 shadow-[0_4px_12px_-2px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_20px_-4px_rgba(0,0,0,0.12)] duration-500',
+                theme === 'neobrutalism' && 'rounded-lg bg-card border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:-translate-x-0.5 hover:-translate-y-0.5',
                 className
             )}
         >
@@ -71,7 +72,8 @@ export function BarChart({
                         'mb-4',
                         theme === 'tokyo-night' && 'text-lg font-bold text-foreground',
                         theme === 'impact' && 'text-sm font-black uppercase tracking-widest',
-                        theme === 'elegant' && 'text-lg font-serif text-foreground'
+                        theme === 'elegant' && 'text-lg font-serif text-foreground',
+                        theme === 'neobrutalism' && 'text-base font-bold text-foreground'
                     )}
                 >
                     {label}
@@ -100,11 +102,12 @@ export function BarChart({
                         {showGrid && (
                             <CartesianGrid 
                                 vertical={false}
-                                strokeDasharray={theme === 'impact' ? '0' : '3 3'}
+                                strokeDasharray={theme === 'impact' ? '0' : theme === 'neobrutalism' ? '0' : '3 3'}
                                 className={cn(
                                     theme === 'tokyo-night' && 'stroke-border/30',
                                     theme === 'impact' && 'stroke-primary/10',
-                                    theme === 'elegant' && 'stroke-border/20'
+                                    theme === 'elegant' && 'stroke-border/20',
+                                    theme === 'neobrutalism' && 'stroke-black/20'
                                 )}
                             />
                         )}
@@ -117,7 +120,8 @@ export function BarChart({
                                 tickFormatter={(value) => value.slice(0, 3)}
                                 className={cn(
                                     theme === 'impact' && 'font-bold uppercase text-[10px]',
-                                    theme === 'elegant' && 'font-serif italic'
+                                    theme === 'elegant' && 'font-serif italic',
+                                    theme === 'neobrutalism' && 'font-bold text-[10px]'
                                 )}
                             />
                         )}
@@ -127,9 +131,10 @@ export function BarChart({
                         />
                         <Bar
                             dataKey="value"
-                            radius={theme === 'impact' ? [0, 0, 0, 0] : [4, 4, 0, 0]}
+                            radius={theme === 'impact' ? [0, 0, 0, 0] : theme === 'neobrutalism' ? [0, 0, 0, 0] : [4, 4, 0, 0]}
                             fill={
                                 theme === 'tokyo-night' ? 'url(#tokyoBarGradient)' :
+                                theme === 'neobrutalism' ? 'var(--chart-1)' :
                                 'var(--primary)'
                             }
                             isAnimationActive={true}
@@ -138,7 +143,8 @@ export function BarChart({
                             className={cn(
                                 "transition-all duration-300",
                                 theme === 'impact' && "hover:fill-primary/80",
-                                theme === 'elegant' && "hover:fill-primary/80"
+                                theme === 'elegant' && "hover:fill-primary/80",
+                                theme === 'neobrutalism' && "hover:fill-[var(--chart-2)]"
                             )}
                         />
                     </RechartsBarChart>

@@ -110,11 +110,44 @@
   --error-foreground: oklch(0.98 0 0);
 }
 
+[data-theme="neobrutalism"] {
+  --background: hsl(330 80% 90%);
+  --foreground: hsl(0 0% 0%);
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(0 0% 0%);
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(0 0% 0%);
+  --primary: hsl(270 70% 60%);
+  --primary-foreground: hsl(0 0% 100%);
+  --secondary: hsl(90, 75%, 52%);
+  --secondary-foreground: hsl(0 0% 0%);
+  --muted: hsl(0 0% 100%);
+  --muted-foreground: hsl(0 0% 0%);
+  --accent: hsl(270 70% 60%);
+  --accent-foreground: hsl(0 0% 100%);
+  --destructive: hsl(0 84.2% 60.2%);
+  --destructive-foreground: hsl(0 0% 100%);
+  --border: hsl(0 0% 0%);
+  --input: hsl(0 0% 100%);
+  --ring: hsl(0 0% 0%);
+  --radius: 0.5rem;
+  --chart-1: hsl(270 70% 60%);
+  --chart-2: hsl(90 80% 50%);
+  --chart-3: hsl(0 0% 100%);
+  --chart-4: hsl(339, 70%, 60%);
+  --chart-5: hsl(69, 80%, 50%);
+  --success: hsl(90, 49%, 48%);
+  --success-foreground: hsl(0 0% 0%);
+  --error: hsl(0 84.2% 60.2%);
+  --error-foreground: hsl(0 0% 100%);
+}
+
 @theme inline {
   --font-sans: "Geist", "Geist Fallback";
   --font-mono: "Geist Mono", "Geist Mono Fallback";
   --font-serif: serif;
   --font-accent: "Garamond", serif;
+  --font-cartoon: "Space Grotesk", sans-serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);

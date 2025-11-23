@@ -65,6 +65,9 @@ export function Card({
                     {theme === 'elegant' && (
                         <div className="absolute -bottom-10 -right-10 w-32 h-32 rounded-full opacity-5 blur-2xl transition-opacity duration-700 group-hover:opacity-15 bg-primary" />
                     )}
+                    {theme === 'neobrutalism' && (
+                        <div className="absolute -right-2 -top-2 w-16 h-16 bg-secondary border-2 border-black rounded-lg opacity-80" />
+                    )}
 
                     <div className="relative z-10 flex flex-col h-full justify-between min-h-[140px]">
                         {title && (
@@ -73,7 +76,8 @@ export function Card({
                                     'text-sm text-muted-foreground',
                                     theme === 'impact' && 'text-xs font-black uppercase tracking-widest',
                                     theme === 'elegant' && 'font-sans text-xs uppercase tracking-widest opacity-70',
-                                    theme === 'tokyo-night' && 'font-medium'
+                                    theme === 'tokyo-night' && 'font-medium',
+                                    theme === 'neobrutalism' && 'text-xs font-bold text-foreground'
                                 )}
                                 style={theme === 'impact' ? { color: 'var(--chart-3)' } : undefined}
                             >
@@ -87,7 +91,8 @@ export function Card({
                                         'text-4xl',
                                         theme === 'tokyo-night' && 'font-bold text-[hsl(var(--chart-1))] drop-shadow-[0_0_12px_hsl(var(--chart-1))] group-hover:drop-shadow-[0_0_20px_hsl(var(--chart-1))] transition-all',
                                         theme === 'impact' && 'font-black tracking-tighter bg-clip-text text-transparent bg-linear-to-br from-primary to-slate-700',
-                                        theme === 'elegant' && 'font-serif font-medium tracking-tight text-primary'
+                                        theme === 'elegant' && 'font-serif font-medium tracking-tight text-primary',
+                                        theme === 'neobrutalism' && 'font-bold text-primary'
                                     )}
                                 >
                                     {value}
@@ -97,7 +102,8 @@ export function Card({
                                         className={cn(
                                             'text-xs text-muted-foreground mt-2',
                                             theme === 'impact' && 'font-bold uppercase tracking-widest',
-                                            theme === 'elegant' && 'font-sans font-medium uppercase tracking-widest opacity-70'
+                                            theme === 'elegant' && 'font-sans font-medium uppercase tracking-widest opacity-70',
+                                            theme === 'neobrutalism' && 'font-medium text-foreground'
                                         )}
                                         style={theme === 'impact' ? { color: 'var(--chart-3)' } : undefined}
                                     >
@@ -131,7 +137,8 @@ export function Card({
                                 <h3
                                     className={cn(
                                         'text-sm font-medium text-muted-foreground',
-                                        theme === 'impact' && 'text-xs font-black uppercase tracking-widest'
+                                        theme === 'impact' && 'text-xs font-black uppercase tracking-widest',
+                                        theme === 'neobrutalism' && 'text-xs font-bold text-foreground'
                                     )}
                                     style={theme === 'impact' ? { color: 'var(--chart-3)' } : undefined}
                                 >
@@ -156,7 +163,8 @@ export function Card({
                                         'text-2xl font-bold',
                                         theme === 'tokyo-night' && 'text-foreground group-hover:text-[hsl(var(--chart-1))] group-hover:drop-shadow-[0_0_10px_hsl(var(--chart-1))] transition-all',
                                         theme === 'impact' && 'font-black',
-                                        theme === 'elegant' && 'font-serif'
+                                        theme === 'elegant' && 'font-serif',
+                                        theme === 'neobrutalism' && 'text-primary'
                                     )}
                                 >
                                     {value}
@@ -167,7 +175,8 @@ export function Card({
                                     className={cn(
                                         'text-xs text-muted-foreground mt-1',
                                         theme === 'impact' && 'font-bold uppercase tracking-widest',
-                                        theme === 'elegant' && 'font-sans italic'
+                                        theme === 'elegant' && 'font-sans italic',
+                                        theme === 'neobrutalism' && 'font-medium text-foreground'
                                     )}
                                 >
                                     {subtitle}
@@ -179,7 +188,9 @@ export function Card({
                                         'flex items-center text-xs mt-1 px-2 py-1',
                                         theme === 'impact' && 'font-bold shadow-sm',
                                         theme === 'tokyo-night' && (isPositive ? 'text-[hsl(var(--success))]' : 'text-[hsl(var(--error))]'),
-                                        theme === 'impact' && (isPositive ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600')
+                                        theme === 'impact' && (isPositive ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'),
+                                        theme === 'neobrutalism' && 'font-bold border-2 border-black rounded',
+                                        theme === 'neobrutalism' && (isPositive ? 'bg-secondary text-foreground' : 'bg-destructive text-destructive-foreground')
                                     )}
                                     style={theme === 'elegant' ? {
                                         color: isPositive ? 'var(--success)' : 'var(--error)'
@@ -202,13 +213,15 @@ export function Card({
                             'mb-4 overflow-hidden',
                             theme === 'tokyo-night' && 'rounded-lg',
                             theme === 'impact' && '',
-                            theme === 'elegant' && 'rounded-lg'
+                            theme === 'elegant' && 'rounded-lg',
+                            theme === 'neobrutalism' && 'rounded-lg border-2 border-black'
                         )}>
                             <div className={cn(
                                 'aspect-square bg-muted',
                                 theme === 'tokyo-night' && 'rounded-lg',
                                 theme === 'impact' && '',
-                                theme === 'elegant' && 'rounded-lg'
+                                theme === 'elegant' && 'rounded-lg',
+                                theme === 'neobrutalism' && 'rounded-lg'
                             )}>
                                 <img
                                     src={image}
@@ -224,7 +237,8 @@ export function Card({
                                 'font-semibold',
                                 themeConfig.fonts.heading,
                                 theme === 'impact' && 'text-xs uppercase tracking-widest',
-                                theme === 'elegant' && 'text-sm'
+                                theme === 'elegant' && 'text-sm',
+                                theme === 'neobrutalism' && 'text-sm font-bold'
                             )}
                             style={theme === 'impact' ? { color: 'var(--chart-3)' } : undefined}
                         >
@@ -241,7 +255,7 @@ export function Card({
             <>
                 {title && (
                     <h3 
-                        className={cn('font-semibold', themeConfig.fonts.heading)}
+                        className={cn('font-semibold', themeConfig.fonts.heading, theme === 'neobrutalism' && 'font-bold')}
                         style={theme === 'impact' ? { color: 'var(--chart-3)' } : undefined}
                     >
                         {title}

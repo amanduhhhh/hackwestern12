@@ -69,7 +69,7 @@ export default function DemoPage() {
                     </div>
 
                     <div className="flex gap-3">
-                        {(['tokyo-night', 'impact', 'elegant'] as ThemeName[]).map((theme) => (
+                        {(['tokyo-night', 'impact', 'elegant', 'neobrutalism'] as ThemeName[]).map((theme) => (
                             <button
                                 key={theme}
                                 onClick={() => handleThemeChange(theme)}
@@ -83,6 +83,7 @@ export default function DemoPage() {
                                 {theme === 'tokyo-night' && ' Tokyo Night'}
                                 {theme === 'impact' && ' Impact'}
                                 {theme === 'elegant' && ' Elegant'}
+                                {theme === 'neobrutalism' && ' Neobrutalism'}
                             </button>
                         ))}
                     </div>
