@@ -72,6 +72,15 @@ class ClashRoyaleDataFetcher:
                 headers=self.headers,
                 timeout=10,
             )
+            
+            if r.status_code == 403:
+                logger.warning(
+                    f"Battle log access forbidden for {player_tag}. "
+                    "This endpoint requires IP whitelisting in your Clash Royale API key settings. "
+                    "Visit https://developer.clashroyale.com to configure your API key."
+                )
+                return None
+            
             r.raise_for_status()
 
             battles = []
@@ -98,6 +107,15 @@ class ClashRoyaleDataFetcher:
                 )
 
             return battles
+        except requests.exceptions.HTTPError as e:
+            if e.response and e.response.status_code == 403:
+                logger.warning(
+                    f"Battle log access forbidden for {player_tag}. "
+                    "This endpoint requires IP whitelisting in your Clash Royale API key settings."
+                )
+            else:
+                logger.error(f"Failed to fetch Clash Royale battle log: {e}")
+            return None
         except Exception as e:
             logger.error(f"Failed to fetch Clash Royale battle log: {e}")
             return None
@@ -164,13 +182,21 @@ class ClashRoyaleDataFetcher:
         deck = self.get_current_deck(player_tag)
         chests = self.get_player_upcoming_chests(player_tag)
 
-        return {
+        summary = {
             "player": player,
             "recent_battles": battles or [],
             "current_deck": deck or [],
             "upcoming_chests": chests[:5] if chests else [],
             "last_updated": datetime.now().isoformat(),
         }
+        
+        if battles is None:
+            summary["battle_log_available"] = False
+            summary["battle_log_note"] = "Battle log requires IP whitelisting in API key settings"
+        else:
+            summary["battle_log_available"] = True
+
+        return summary
 
     def is_authenticated(self) -> bool:
         return bool(self.api_key)
