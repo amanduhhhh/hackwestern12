@@ -71,7 +71,12 @@ export function Card({
                         <div className="absolute -bottom-10 -right-10 w-32 h-32 rounded-full opacity-5 blur-2xl transition-opacity duration-700 group-hover:opacity-15 bg-primary" />
                     )}
                     {theme === 'neobrutalism' && (
-                        <div className="absolute -right-2 -top-2 w-16 h-16 bg-secondary border-2 border-black rounded-lg opacity-80" />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 0.3, delay: 0.1 }}
+                            className="absolute -right-2 -top-2 w-16 h-16 bg-secondary border-2 border-black rounded-lg"
+                        />
                     )}
 
                     <div className="relative z-10 flex flex-col h-full justify-between min-h-[140px]">

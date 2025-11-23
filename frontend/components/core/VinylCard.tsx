@@ -196,15 +196,17 @@ export function VinylCard({
                     )}>
                         {title}
                     </h3>
-                    <p className={cn(
-                        'text-sm',
-                        theme === 'tokyo-night' && 'text-muted-foreground',
-                        theme === 'impact' && 'font-bold text-muted-foreground uppercase text-xs',
-                        theme === 'elegant' && 'text-muted-foreground',
-                        theme === 'neobrutalism' && 'font-space-grotesk text-secondary'
-                    )}>
-                        {artist}
-                    </p>
+                    {artist && (
+                        <p className={cn(
+                            'text-sm',
+                            theme === 'tokyo-night' && 'text-muted-foreground',
+                            theme === 'impact' && 'font-bold text-muted-foreground uppercase text-xs',
+                            theme === 'elegant' && 'text-muted-foreground',
+                            theme === 'neobrutalism' && 'font-space-grotesk text-secondary'
+                        )}>
+                            {artist}
+                        </p>
+                    )}
                 </div>
             </div>
         </motion.div>
