@@ -1,5 +1,6 @@
 import yfinance as yf
 import logging
+import math
 from typing import Optional, Dict, Any, List
 from datetime import datetime
 
@@ -70,17 +71,19 @@ class StocksDataFetcher:
     )
     def fetch_market_trends(self) -> Optional[Dict[str, Any]]:
         try:
-            indices = {}
+            indices = []
             for name, sym in {
                 "S&P 500": "^GSPC",
                 "NASDAQ": "^IXIC",
                 "DOW": "^DJI",
             }.items():
                 info = yf.Ticker(sym).info
-                indices[name] = {
-                    "value": info.get("regularMarketPrice", 0),
-                    "change": info.get("regularMarketChangePercent", 0),
-                }
+                indices.append({
+                    "name": name,
+                    "symbol": sym,
+                    "value": round(info.get("regularMarketPrice", 0), 2),
+                    "change": round(info.get("regularMarketChangePercent", 0), 2),
+                })
 
             trending = []
             for sym in ["AAPL", "MSFT", "GOOGL", "AMZN", "TSLA", "NVDA", "META"]:
@@ -105,43 +108,52 @@ class StocksDataFetcher:
             logger.error(f"Failed to fetch market trends: {e}")
             return None
 
+    def _safe_number(self, value, default=0):
+        if value is None or (isinstance(value, float) and (math.isnan(value) or math.isinf(value))):
+            return default
+        return value
+
     @tool_function(
-        description="Get real-time stock price, volume, market cap, and year performance for a ticker symbol",
+        description="Get real-time stock price, volume, market cap, and year performance for one or more ticker symbols",
         params={
-            "symbol": {
-                "type": "string",
-                "description": "Stock ticker symbol (e.g., AAPL, TSLA, GOOGL, MSFT, AMZN, NVDA, META)"
+            "symbols": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "List of stock ticker symbols (e.g., ['AAPL', 'TSLA', 'GOOGL', 'MSFT', 'AMZN', 'NVDA', 'META'])"
             }
         }
     )
-    def fetch_stock_info(self, symbol: str) -> Optional[Dict[str, Any]]:
+    def fetch_stock_info(self, symbols: List[str]) -> Optional[Dict[str, Any]]:
         try:
-            ticker = yf.Ticker(symbol)
-            info = ticker.info
-            hist = ticker.history(period="1y")
+            stocks = []
+            for symbol in symbols:
+                ticker = yf.Ticker(symbol)
+                info = ticker.info
+                hist = ticker.history(period="1y")
 
-            year_perf = 0
-            if not hist.empty and len(hist) > 0:
-                year_perf = round(
-                    (
-                        (hist["Close"].iloc[-1] - hist["Close"].iloc[0])
-                        / hist["Close"].iloc[0]
-                    )
-                    * 100,
-                    2,
-                )
+                year_perf = 0
+                if not hist.empty and len(hist) > 0:
+                    start_price = hist["Close"].iloc[0]
+                    end_price = hist["Close"].iloc[-1]
+                    if start_price and start_price != 0:
+                        year_perf = round(((end_price - start_price) / start_price) * 100, 2)
+                        year_perf = self._safe_number(year_perf, 0)
+
+                stocks.append({
+                    "symbol": symbol,
+                    "name": info.get("longName", symbol),
+                    "current_price": self._safe_number(info.get("regularMarketPrice"), 0),
+                    "change_percent": round(self._safe_number(info.get("regularMarketChangePercent"), 0), 2),
+                    "market_cap": self._safe_number(info.get("marketCap"), 0),
+                    "year_performance": year_perf,
+                })
 
             return {
-                "symbol": symbol,
-                "name": info.get("longName", symbol),
-                "current_price": info.get("regularMarketPrice", 0),
-                "change_percent": info.get("regularMarketChangePercent", 0),
-                "market_cap": info.get("marketCap", 0),
-                "year_performance": year_perf,
+                "stocks": stocks,
                 "last_updated": datetime.now().isoformat(),
             }
         except Exception as e:
-            logger.error(f"Failed to fetch stock info for {symbol}: {e}")
+            logger.error(f"Failed to fetch stock info for {symbols}: {e}")
             return None
 
     def is_authenticated(self) -> bool:

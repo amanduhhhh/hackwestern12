@@ -12,13 +12,14 @@ import type {
   HydrationLog,
   InteractionPayload,
 } from './types';
-import { generateSlotId, resolveDataSource, parseConfig } from './utils';
+import { generateSlotId, resolveDataSource, parseConfig, resolveDataValue } from './utils';
 
 interface HybridRendererProps {
   htmlContent: string;
   dataContext: DataContext;
   onInteraction: (type: string, payload: InteractionPayload) => void;
   onLog?: (log: HydrationLog) => void;
+  isInteracting?: boolean;
 }
 
 interface SlotErrorBoundaryProps {
@@ -61,6 +62,7 @@ export function HybridRenderer({
   dataContext,
   onInteraction,
   onLog,
+  isInteracting = false,
 }: HybridRendererProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const rootsRef = useRef<Map<string, Root>>(new Map());
@@ -70,11 +72,13 @@ export function HybridRenderer({
   const onLogRef = useRef(onLog);
   const onInteractionRef = useRef(onInteraction);
   const dataContextRef = useRef(dataContext);
+  const isInteractingRef = useRef(isInteracting);
 
   useEffect(() => {
     onLogRef.current = onLog;
     onInteractionRef.current = onInteraction;
     dataContextRef.current = dataContext;
+    isInteractingRef.current = isInteracting;
   });
 
   const log = useCallback((
@@ -118,6 +122,8 @@ export function HybridRenderer({
       });
 
       const handleInteraction = (payload: { clickedData: unknown }) => {
+        if (isInteractingRef.current) return;
+        
         onInteractionRef.current('click', {
           componentType,
           clickPrompt,
@@ -244,15 +250,8 @@ export function HybridRenderer({
       const source = el.getAttribute('data-source');
       if (!source) return;
 
-      const parts = source.split('::');
-      if (parts.length !== 2) return;
-
-      const [namespace, key] = parts;
-      const namespaceData = dataContextRef.current[namespace];
-      if (!namespaceData) return;
-
-      const value = namespaceData[key];
-      if (value !== undefined && value !== null && typeof value !== 'object') {
+      const value = resolveDataValue(dataContextRef.current, source);
+      if (value !== null) {
         el.textContent = String(value);
         log('resolve', `Set ${source} = ${value}`);
       }
@@ -279,9 +278,12 @@ export function HybridRenderer({
     <motion.div
       ref={containerRef}
       initial={{ opacity: 0 }}
-      animate={{ opacity: isReady ? 1 : 0 }}
+      animate={{ opacity: isReady ? (isInteracting ? 0.5 : 1) : 0 }}
       transition={{ duration: 0.2 }}
       className="hybrid-renderer"
+      style={{
+        pointerEvents: isInteracting ? 'none' : 'auto',
+      }}
     />
   );
 }

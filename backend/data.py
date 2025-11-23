@@ -348,4 +348,12 @@ COMPONENT_SCHEMAS = {
         "data": [{"column1": "value", "column2": "value"}],
         "config": {"template": {"columns": ["field1", "field2", "field3"]}},
     },
+    "Clickable": {
+        "description": "Interactive button that triggers an action",
+        "use_when": "Any button, CTA, or clickable element that needs interaction handling",
+        "data_shape": "string (button label) or not needed",
+        "data": "string",
+        "config": {"label": "Button text", "class": "Tailwind classes for styling"},
+        "note": "ALWAYS use this for buttons, never raw <button> tags. The click-prompt defines what happens when clicked.",
+    },
 }

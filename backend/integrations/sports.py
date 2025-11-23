@@ -83,6 +83,65 @@ class SportsDataFetcher:
 
         return None
 
+    def _fetch_team_schedule(self, abbr: str, league: str, limit: int = 5) -> List[Dict[str, Any]]:
+        config = LEAGUE_CONFIG[league]
+        try:
+            r = requests.get(
+                f"{self.base_url}/{config['sport']}/{league}/teams/{abbr}/schedule",
+                timeout=10
+            )
+            r.raise_for_status()
+            data = r.json()
+
+            events = data.get("events", [])
+            schedule = []
+
+            for event in events[:limit]:
+                competitions = event.get("competitions", [{}])
+                if not competitions:
+                    continue
+
+                comp = competitions[0]
+                competitors = comp.get("competitors", [])
+
+                home_team = None
+                away_team = None
+                for team in competitors:
+                    if team.get("homeAway") == "home":
+                        home_team = team
+                    else:
+                        away_team = team
+
+                # Score is a dict with 'value' and 'displayValue'
+                home_score_data = home_team.get("score", {}) if home_team else {}
+                away_score_data = away_team.get("score", {}) if away_team else {}
+
+                if isinstance(home_score_data, dict):
+                    home_score = int(home_score_data.get("value", 0))
+                else:
+                    home_score = int(home_score_data) if home_score_data else 0
+
+                if isinstance(away_score_data, dict):
+                    away_score = int(away_score_data.get("value", 0))
+                else:
+                    away_score = int(away_score_data) if away_score_data else 0
+
+                schedule.append({
+                    "date": event.get("date", "")[:10],
+                    "name": event.get("name", ""),
+                    "shortName": event.get("shortName", ""),
+                    "completed": comp.get("status", {}).get("type", {}).get("completed", False),
+                    "homeTeam": home_team.get("team", {}).get("displayName", "") if home_team else "",
+                    "awayTeam": away_team.get("team", {}).get("displayName", "") if away_team else "",
+                    "homeScore": home_score,
+                    "awayScore": away_score,
+                })
+
+            return schedule
+        except Exception as e:
+            logger.error(f"Failed to fetch {league} schedule: {e}")
+            return []
+
     def _fetch_team_data(self, team_name: str, league: str) -> Optional[Dict[str, Any]]:
         abbr = self._get_team_abbr(team_name, league)
         if not abbr:
@@ -99,27 +158,57 @@ class SportsDataFetcher:
             data = r.json()
 
             team = data.get("team", {})
+            team_id = team.get("id")
             record = team.get("record", {})
             items = record.get("items", [])
 
-            stats = {"wins": 0, "losses": 0}
+            stats = {
+                "wins": 0, "losses": 0, "winPercent": 0,
+                "avgPointsFor": 0, "avgPointsAgainst": 0,
+                "streak": 0, "playoffSeed": 0, "pointDifferential": 0
+            }
             for item in items:
                 if item.get("type") == "total":
                     stats_data = item.get("stats", [])
                     for stat in stats_data:
-                        if stat.get("name") == "wins":
-                            stats["wins"] = int(stat.get("value", 0))
-                        elif stat.get("name") == "losses":
-                            stats["losses"] = int(stat.get("value", 0))
+                        name = stat.get("name")
+                        value = stat.get("value", 0)
+                        if name == "wins":
+                            stats["wins"] = int(value)
+                        elif name == "losses":
+                            stats["losses"] = int(value)
+                        elif name == "winPercent":
+                            stats["winPercent"] = round(value * 100, 1)
+                        elif name == "avgPointsFor":
+                            stats["avgPointsFor"] = round(value, 1)
+                        elif name == "avgPointsAgainst":
+                            stats["avgPointsAgainst"] = round(value, 1)
+                        elif name == "streak":
+                            stats["streak"] = int(value)
+                        elif name == "playoffSeed":
+                            stats["playoffSeed"] = int(value)
+                        elif name == "pointDifferential":
+                            stats["pointDifferential"] = round(value, 1)
+
+            # Fetch recent/upcoming games
+            schedule = self._fetch_team_schedule(abbr, league, limit=5)
 
             return {
-                "id": team.get("id"),
+                "id": team_id,
                 "name": team.get("displayName"),
                 "sport": config["sport"].title(),
                 "league": config["name"],
                 "abbreviation": abbr,
+                "color": team.get("color", ""),
                 "wins": stats["wins"],
-                "losses": stats["losses"]
+                "losses": stats["losses"],
+                "winPercent": stats["winPercent"],
+                "avgPointsFor": stats["avgPointsFor"],
+                "avgPointsAgainst": stats["avgPointsAgainst"],
+                "streak": stats["streak"],
+                "playoffSeed": stats["playoffSeed"],
+                "pointDifferential": stats["pointDifferential"],
+                "schedule": schedule
             }
         except Exception as e:
             logger.error(f"Failed to fetch {league} team {team_name}: {e}")

@@ -6,6 +6,7 @@ import {
   GridPlaceholder,
   TimelinePlaceholder,
   TablePlaceholder,
+  ClickablePlaceholder,
 } from './placeholders';
 
 export const COMPONENT_REGISTRY: ComponentRegistry = {
@@ -15,4 +16,5 @@ export const COMPONENT_REGISTRY: ComponentRegistry = {
   Grid: GridPlaceholder,
   Timeline: TimelinePlaceholder,
   Table: TablePlaceholder,
+  Clickable: ClickablePlaceholder,
 };

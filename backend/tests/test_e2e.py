@@ -263,13 +263,21 @@ def test_stocks_direct():
     settings = get_settings()
     fetcher = StocksDataFetcher(alpha_vantage_key=settings.alpha_vantage_api_key or "")
 
-    logger.info("Fetching AAPL stock info:")
-    info = fetcher.fetch_stock_info("AAPL")
+    logger.info("Fetching stock info for AAPL, GOOGL, MSFT:")
+    info = fetcher.fetch_stock_info(["AAPL", "GOOGL", "MSFT"])
     if info:
-        logger.info(f"  {info['name']}: ${info['current_price']}")
-        logger.info(f"  Year performance: {info['year_performance']}%")
+        for stock in info["stocks"]:
+            logger.info(f"  {stock['name']}: ${stock['current_price']}")
+            logger.info(f"    Year performance: {stock['year_performance']}%")
+
+        try:
+            json.dumps(info)
+            logger.info("  JSON serialization: OK")
+        except (TypeError, ValueError) as e:
+            logger.error(f"  JSON serialization FAILED: {e}")
+            return False
     else:
-        logger.error("  Failed to fetch AAPL")
+        logger.error("  Failed to fetch stock info")
         return False
 
     logger.info("\nFetching portfolio data:")

@@ -4,27 +4,19 @@ import { useState } from 'react';
 import Script from 'next/script';
 import { useStreamStore } from '@/stores/stream';
 import { HybridRenderer } from '@/components/HybridRenderer';
-
-// const PRESETS_OLD = [
-//   "Show my recent transactions and spending breakdown",
-//   "What are my active subscriptions and monthly costs?",
-//   "Show my tasks and project time allocation",
-//   "How much music did I listen to this year?",
-//   "Show my fitness stats - workouts and calories",
-//   "What books did I read and how many pages?",
-// ];
+import { ThinkingWidget } from '@/components/ThinkingWidget';
 
 const PRESETS = [
-  "Show my Spotify top songs and listening stats",
-  "Lakers vs Celtics - compare their season records",
-  "My running stats from Strava with recent activities",
-  "AAPL, GOOGL, MSFT stock prices and performance",
-  "Cowboys, Yankees, and Bruins - my favorite teams",
-  "Compare my workout calories burned vs music listening time",
-  "Tech stock portfolio with market trends",
-  "NFL standings for Chiefs, Eagles, and Bills",
-  "My Clash Royale player stats and recent battles",
-  "Top genres I listen to and Lakers game schedule",
+  "My Spotify Wrapped - top songs, artists, and total listening time",
+  "Lakers vs Warriors - who's winning? Show me the rivalry",
+  "My Strava running stats with recent runs and personal records",
+  "NVDA vs TSLA - stock battle royale",
+  "Chiefs, Eagles, Cowboys - NFL power rankings showdown",
+  "My Clash Royale deck and recent battle history",
+  "Tech portfolio check - AAPL, GOOGL, MSFT, META performance",
+  "Raptors and Maple Leafs - Toronto sports update",
+  "Market trends - are we pumping or dumping?",
+  "My fitness journey - Strava activities and music I train to",
 ];
 
 export default function GeneratePage() {
@@ -37,10 +29,13 @@ export default function GeneratePage() {
     htmlContent,
     rawResponse,
     error,
+    viewStack,
+    thinkingMessages,
     startStream,
     reset,
     refineStream,
-    handleInteraction
+    handleInteraction,
+    goBack
   } = useStreamStore();
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -115,7 +110,26 @@ export default function GeneratePage() {
         <div className="lg:col-span-2 border-r border-zinc-800 overflow-auto">
           <div className="p-4">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-medium text-zinc-400">Rendered Output</h2>
+              <div className="flex items-center gap-3">
+                {viewStack.length > 0 && (
+                  <button
+                    onClick={goBack}
+                    disabled={isStreaming}
+                    className="text-xs px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-50 rounded transition-colors flex items-center gap-1"
+                  >
+                    <span>←</span>
+                    <span>Back</span>
+                  </button>
+                )}
+                <h2 className="text-sm font-medium text-zinc-400">
+                  {viewStack.length > 0 ? 'Detail View' : 'Rendered Output'}
+                </h2>
+              </div>
+
+              <ThinkingWidget
+                messages={thinkingMessages}
+                isVisible={isStreaming}
+              />
               {!isStreaming && htmlContent && (
                 <form onSubmit={handleRefine} className="flex gap-2">
                   <input
@@ -141,6 +155,7 @@ export default function GeneratePage() {
                   htmlContent={htmlContent}
                   dataContext={dataContext}
                   onInteraction={handleInteraction}
+                  isInteracting={isStreaming && viewStack.length > 0}
                 />
               </div>
             ) : (
