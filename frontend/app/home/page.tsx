@@ -56,7 +56,6 @@ export default function HomePage() {
         htmlContent,
         rawResponse,
         thinkingMessages,
-        toolCalls,
         startStream,
         reset,
         refineStream,
@@ -154,39 +153,13 @@ export default function HomePage() {
                                 <div className="text-xs font-medium text-white/90 mb-3">Mosaic thinking...</div>
                                 
                                 <div className="space-y-1.5 max-h-96 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] font-mono text-[11px]">
-                                    {thinkingMessages.map((msg, i) => (
-                                        <div key={i} className="text-white/70">
-                                            <span className="text-white/50">*</span> {msg.message}
-                                        </div>
-                                    ))}
-                                    
-                                    {toolCalls.map((call, i) => (
-                                        <div key={i} className="space-y-0.5">
-                                            <div className="text-blue-400/90">
-                                                <span className="text-white/50">*</span> <span className="text-blue-400/90">&gt;</span> {call.name}
-                                                {call.args && (
-                                                    <span className="text-white/50 ml-1">
-                                                        ({typeof call.args === 'object' ? JSON.stringify(call.args).slice(0, 80) : call.args})
-                                                    </span>
-                                                )}
+                                    {thinkingMessages && thinkingMessages.length > 0 ? (
+                                        thinkingMessages.map((msg, i) => (
+                                            <div key={i} className="text-white/70">
+                                                <span className="text-white/50">*</span> {msg.message || msg.type}
                                             </div>
-                                            {call.result && (
-                                                <div className={cn(
-                                                    "ml-4",
-                                                    call.statusCode === 200 ? "text-green-400/90" :
-                                                    call.statusCode && call.statusCode >= 400 ? "text-yellow-400/90" :
-                                                    "text-green-400/90"
-                                                )}>
-                                                    <span className="text-green-400/90">&lt;</span> {call.result}
-                                                    {call.detail && call.detail !== call.result && (
-                                                        <span className="text-white/50 ml-1">- {call.detail}</span>
-                                                    )}
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))}
-                                    
-                                    {thinkingMessages.length === 0 && toolCalls.length === 0 && (
+                                        ))
+                                    ) : (
                                         <div className="text-white/50">* Planning query...</div>
                                     )}
                                 </div>
