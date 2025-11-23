@@ -1,5 +1,13 @@
 import { create } from 'zustand';
 import type { DataContext, InteractionPayload } from '@/components/types';
+import type { ThinkingMessage } from '@/components/ThinkingWidget';
+
+interface ViewState {
+  htmlContent: string;
+  rawResponse: string;
+  dataContext: DataContext;
+  query: string;
+}
 
 interface StreamState {
   isStreaming: boolean;
@@ -8,22 +16,43 @@ interface StreamState {
   rawResponse: string;
   error: string | null;
   currentQuery: string;
-  thinkingMessages: Array<{ type: string; message: string; timestamp: number }>;
-  toolCalls: Array<{ name: string; args?: any; result?: string; statusCode?: number; detail?: string; timestamp: number }>;
+  viewStack: ViewState[];
+  thinkingMessages: ThinkingMessage[];
 
   startStream: (query: string) => void;
   refineStream: (query: string) => void;
   handleInteraction: (type: string, payload: InteractionPayload) => void;
+  goBack: () => void;
   reset: () => void;
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
-const playSound = (filename: string) => {
+let audioPlayer: HTMLAudioElement | null = null;
+
+const initAudio = () => {
+  if (!audioPlayer) {
+    audioPlayer = new Audio();
+    audioPlayer.volume = 0.5;
+  }
+  return audioPlayer;
+};
+
+const playSound = async (filename: string) => {
   try {
-    const audio = new Audio(`/sounds/${filename}`);
-    audio.volume = 0.5;
-    audio.play().catch(() => {});
+    const audio = initAudio();
+    audio.src = `/sounds/${filename}`;
+    await audio.play();
+  } catch (err) {
+  }
+};
+
+const stopSound = async () => {
+  try {
+    if (audioPlayer) {
+      audioPlayer.pause();
+      audioPlayer.currentTime = 0;
+    }
   } catch (err) {
   }
 };
@@ -35,11 +64,11 @@ export const useStreamStore = create<StreamState>((set, get) => ({
   rawResponse: '',
   error: null,
   currentQuery: '',
+  viewStack: [],
   thinkingMessages: [],
-  toolCalls: [],
 
   startStream: async (query: string) => {
-    playSound('start.mp3');
+    await playSound('start.mp3');
     set({
       isStreaming: true,
       dataContext: {},
@@ -48,7 +77,6 @@ export const useStreamStore = create<StreamState>((set, get) => ({
       error: null,
       currentQuery: query,
       thinkingMessages: [],
-      toolCalls: [],
     });
 
     try {
@@ -92,79 +120,60 @@ export const useStreamStore = create<StreamState>((set, get) => ({
                 set({ dataContext: data });
                 break;
               case 'thinking':
-                set((state) => ({
+                set({
                   thinkingMessages: [...state.thinkingMessages, {
-                    type: data.type || 'thinking',
-                    message: data.message || data.content || '',
-                    timestamp: Date.now()
-                  }]
-                }));
+                    type: 'thinking',
+                    message: data.message,
+                    timestamp: Date.now(),
+                  }],
+                });
                 break;
               case 'tool_call':
-                set((state) => ({
-                  toolCalls: [...state.toolCalls, {
-                    name: data.name || '',
+                set({
+                  thinkingMessages: [...state.thinkingMessages, {
+                    type: 'tool_call',
+                    function: data.function,
                     args: data.args,
-                    result: undefined,
-                    timestamp: Date.now()
-                  }]
-                }));
+                    timestamp: Date.now(),
+                  }],
+                });
                 break;
               case 'tool_result':
-                set((state) => {
-                  const toolCalls = [...state.toolCalls];
-                  const lastCall = toolCalls[toolCalls.length - 1];
-                  if (lastCall) {
-                    const statusCode = data.status_code || data.statusCode || data.status;
-                    const resultMessage = data.message || data.result || data.detail || 'ok';
-                    
-                    let displayMessage = resultMessage;
-                    if (statusCode === 200) {
-                      displayMessage = `${lastCall.name} ok`;
-                    } else if (statusCode === 401 || statusCode === 403) {
-                      displayMessage = `unauthorized, using sample data`;
-                    } else if (statusCode && statusCode >= 400) {
-                      displayMessage = `${resultMessage} (${statusCode})`;
-                    }
-                    
-                    lastCall.result = displayMessage;
-                    lastCall.statusCode = statusCode;
-                    lastCall.detail = data.detail || data.message || resultMessage;
-                  }
-                  return { toolCalls };
+                set({
+                  thinkingMessages: [...state.thinkingMessages, {
+                    type: 'tool_result',
+                    function: data.function,
+                    success: data.success,
+                    timestamp: Date.now(),
+                  }],
+                });
+                break;
+              case 'tool_error':
+                set({
+                  thinkingMessages: [...state.thinkingMessages, {
+                    type: 'tool_error',
+                    function: data.function,
+                    error: data.error,
+                    timestamp: Date.now(),
+                  }],
                 });
                 break;
               case 'ui':
-                const wasEmpty = state.htmlContent === '';
+                let content = data.content;
+                content = content.replace(/```html\n?/g, '');
+                content = content.replace(/```\n?/g, '');
                 set({
-                  htmlContent: state.htmlContent + data.content,
-                  rawResponse: state.rawResponse + data.content,
+                  htmlContent: state.htmlContent + content,
+                  rawResponse: state.rawResponse + content,
                 });
-                if (wasEmpty && data.content) {
-                  set((s) => ({
-                    thinkingMessages: [...s.thinkingMessages, {
-                      type: 'status',
-                      message: 'Generating UI...',
-                      timestamp: Date.now()
-                    }]
-                  }));
-                }
-                break;
-              case 'status':
-                set((state) => ({
-                  thinkingMessages: [...state.thinkingMessages, {
-                    type: 'status',
-                    message: data.message,
-                    timestamp: Date.now()
-                  }]
-                }));
                 break;
               case 'error':
                 set({ error: data.message, isStreaming: false });
+                await stopSound();
                 break;
               case 'done':
                 set({ isStreaming: false });
-                playSound('stop.mp3');
+                await playSound('stop.mp3');
                 break;
             }
 
@@ -174,16 +183,14 @@ export const useStreamStore = create<StreamState>((set, get) => ({
       }
 
       set({ isStreaming: false });
-      playSound('stop.mp3');
+      await playSound('stop.mp3');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
       set({
         error: message,
         isStreaming: false,
       });
-      playSound('stop.mp3');
-      removeToast(thinkingId);
-      addToast(message, 'error');
+      await stopSound();
     }
   },
 
@@ -195,8 +202,8 @@ export const useStreamStore = create<StreamState>((set, get) => ({
       rawResponse: '',
       error: null,
       currentQuery: '',
+      viewStack: [],
       thinkingMessages: [],
-      toolCalls: [],
     });
   },
 
@@ -208,15 +215,18 @@ export const useStreamStore = create<StreamState>((set, get) => ({
       return;
     }
 
-    playSound('start.mp3');
+    await playSound('start.mp3');
     set({
       isStreaming: true,
       htmlContent: '',
       rawResponse: '',
       error: null,
       currentQuery: query,
-      thinkingMessages: [],
-      toolCalls: [],
+      thinkingMessages: [{
+        type: 'thinking',
+        message: 'Refining UI...',
+        timestamp: Date.now(),
+      }],
     });
 
     try {
@@ -264,84 +274,60 @@ export const useStreamStore = create<StreamState>((set, get) => ({
                 set({ dataContext: data });
                 break;
               case 'thinking':
-                set((state) => ({
-                  thinkingMessages: [...state.thinkingMessages, {
-                    type: data.type || 'thinking',
-                    message: data.message || data.content || '',
-                    timestamp: Date.now()
-                  }]
-                }));
+                set({
+                  thinkingMessages: [...currentState.thinkingMessages, {
+                    type: 'thinking',
+                    message: data.message,
+                    timestamp: Date.now(),
+                  }],
+                });
                 break;
               case 'tool_call':
-                set((state) => ({
-                  toolCalls: [...state.toolCalls, {
-                    name: data.name || '',
+                set({
+                  thinkingMessages: [...currentState.thinkingMessages, {
+                    type: 'tool_call',
+                    function: data.function,
                     args: data.args,
-                    result: undefined,
-                    statusCode: undefined,
-                    detail: undefined,
-                    timestamp: Date.now()
-                  }]
-                }));
+                    timestamp: Date.now(),
+                  }],
+                });
                 break;
               case 'tool_result':
-                set((state) => {
-                  const toolCalls = [...state.toolCalls];
-                  const lastCall = toolCalls[toolCalls.length - 1];
-                  if (lastCall) {
-                    const statusCode = data.status_code || data.statusCode || data.status;
-                    const resultMessage = data.message || data.result || data.detail || 'ok';
-                    
-                    let displayMessage = resultMessage;
-                    if (statusCode === 200) {
-                      displayMessage = `${lastCall.name} ok`;
-                    } else if (statusCode === 401 || statusCode === 403) {
-                      displayMessage = `unauthorized, using sample data`;
-                    } else if (statusCode && statusCode >= 400) {
-                      displayMessage = `${resultMessage} (${statusCode})`;
-                    }
-                    
-                    lastCall.result = displayMessage;
-                    lastCall.statusCode = statusCode;
-                    lastCall.detail = data.detail || data.message || resultMessage;
-                  }
-                  return { toolCalls };
+                set({
+                  thinkingMessages: [...currentState.thinkingMessages, {
+                    type: 'tool_result',
+                    function: data.function,
+                    success: data.success,
+                    timestamp: Date.now(),
+                  }],
+                });
+                break;
+              case 'tool_error':
+                set({
+                  thinkingMessages: [...currentState.thinkingMessages, {
+                    type: 'tool_error',
+                    function: data.function,
+                    error: data.error,
+                    timestamp: Date.now(),
+                  }],
                 });
                 break;
               case 'ui':
-                const wasEmpty = currentState.htmlContent === '';
+                let refineContent = data.content;
+                refineContent = refineContent.replace(/```html\n?/g, '');
+                refineContent = refineContent.replace(/```\n?/g, '');
                 set({
-                  htmlContent: currentState.htmlContent + data.content,
-                  rawResponse: currentState.rawResponse + data.content,
+                  htmlContent: currentState.htmlContent + refineContent,
+                  rawResponse: currentState.rawResponse + refineContent,
                 });
-                if (wasEmpty && data.content) {
-                  set((s) => ({
-                    thinkingMessages: [...s.thinkingMessages, {
-                      type: 'status',
-                      message: 'Generating UI...',
-                      timestamp: Date.now()
-                    }]
-                  }));
-                }
-                break;
-              case 'status':
-                set((state) => ({
-                  thinkingMessages: [...state.thinkingMessages, {
-                    type: 'status',
-                    message: data.message,
-                    timestamp: Date.now()
-                  }]
-                }));
                 break;
               case 'error':
                 set({ error: data.message, isStreaming: false });
-                playSound('stop.mp3');
-                addToast(data.message, 'error');
+                await stopSound();
                 break;
               case 'done':
                 set({ isStreaming: false });
-                playSound('stop.mp3');
-                removeToast(thinkingId);
+                await playSound('stop.mp3');
                 break;
             }
 
@@ -351,27 +337,200 @@ export const useStreamStore = create<StreamState>((set, get) => ({
       }
 
       set({ isStreaming: false });
-      playSound('stop.mp3');
+      await playSound('stop.mp3');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
       set({
         error: message,
         isStreaming: false,
       });
-      playSound('stop.mp3');
+      await stopSound();
     }
   },
 
-  handleInteraction: (_type: string, payload: InteractionPayload) => {
+  handleInteraction: async (_type: string, payload: InteractionPayload) => {
     if (!payload.clickPrompt) {
       return;
     }
 
-    console.log('Interaction:', {
-      slotId: payload.slotId,
-      clickPrompt: payload.clickPrompt,
-      clickedData: payload.clickedData,
-      componentType: payload.componentType,
+    const state = get();
+
+    const currentView: ViewState = {
+      htmlContent: state.htmlContent,
+      rawResponse: state.rawResponse,
+      dataContext: state.dataContext,
+      query: state.currentQuery,
+    };
+
+    await playSound('start.mp3');
+    set({
+      isStreaming: true,
+      error: null,
+      viewStack: [...state.viewStack, currentView],
+      thinkingMessages: [],
+    });
+
+    try {
+      const response = await fetch(`${API_URL}/api/interact`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clickPrompt: payload.clickPrompt,
+          clickedData: payload.clickedData,
+          currentHtml: state.rawResponse,
+          dataContext: state.dataContext,
+          componentType: payload.componentType,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error('No response body');
+
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let currentEvent = '';
+      let firstUiChunk = true;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (line.startsWith('event: ')) {
+            currentEvent = line.slice(7);
+            continue;
+          }
+
+          if (line.startsWith('data: ')) {
+            const data = JSON.parse(line.slice(6));
+            const currentState = get();
+
+            switch (currentEvent) {
+              case 'data':
+                set({ dataContext: data });
+                break;
+              case 'ui':
+                let uiContent = data.content;
+                uiContent = uiContent.replace(/```html\n?/g, '');
+                uiContent = uiContent.replace(/```\n?/g, '');
+                
+                if (firstUiChunk) {
+                  set({
+                    htmlContent: uiContent,
+                    rawResponse: uiContent,
+                  });
+                  firstUiChunk = false;
+                } else {
+                  set({
+                    htmlContent: currentState.htmlContent + uiContent,
+                    rawResponse: currentState.rawResponse + uiContent,
+                  });
+                }
+                break;
+              case 'thinking':
+                set({
+                  thinkingMessages: [...currentState.thinkingMessages, {
+                    type: 'thinking',
+                    message: data.message,
+                    timestamp: Date.now(),
+                  }],
+                });
+                break;
+              case 'tool_call':
+                set({
+                  thinkingMessages: [...currentState.thinkingMessages, {
+                    type: 'tool_call',
+                    function: data.function,
+                    args: data.args,
+                    timestamp: Date.now(),
+                  }],
+                });
+                break;
+              case 'tool_result':
+                set({
+                  thinkingMessages: [...currentState.thinkingMessages, {
+                    type: 'tool_result',
+                    function: data.function,
+                    success: data.success,
+                    timestamp: Date.now(),
+                  }],
+                });
+                break;
+              case 'tool_error':
+                set({
+                  thinkingMessages: [...currentState.thinkingMessages, {
+                    type: 'tool_error',
+                    function: data.function,
+                    error: data.error,
+                    timestamp: Date.now(),
+                  }],
+                });
+                break;
+              case 'error':
+                set({ error: data.message, isStreaming: false });
+                await stopSound();
+                break;
+              case 'done':
+                set({ isStreaming: false });
+                await playSound('stop.mp3');
+                break;
+            }
+
+            currentEvent = '';
+          }
+        }
+      }
+
+      set({ isStreaming: false });
+      await playSound('stop.mp3');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      const currentState = get();
+      const prevStack = currentState.viewStack;
+
+      if (prevStack.length > 0) {
+        const prev = prevStack[prevStack.length - 1];
+        set({
+          error: message,
+          isStreaming: false,
+          htmlContent: prev.htmlContent,
+          rawResponse: prev.rawResponse,
+          dataContext: prev.dataContext,
+          viewStack: prevStack.slice(0, -1),
+        });
+      } else {
+        set({
+          error: message,
+          isStreaming: false,
+        });
+      }
+      await stopSound();
+    }
+  },
+
+  goBack: () => {
+    const state = get();
+    const stack = state.viewStack;
+
+    if (stack.length === 0) {
+      return;
+    }
+
+    const prev = stack[stack.length - 1];
+    set({
+      htmlContent: prev.htmlContent,
+      rawResponse: prev.rawResponse,
+      dataContext: prev.dataContext,
+      currentQuery: prev.query,
+      viewStack: stack.slice(0, -1),
     });
   },
 }));

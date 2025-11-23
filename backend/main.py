@@ -10,7 +10,14 @@ import logging
 from config import get_settings
 from data import MOCK_DATA
 from utils import get_data, sanitize_prompt
-from prompts import build_planning_prompt, build_ui_system_prompt, build_ui_user_prompt
+from prompts import (
+    build_planning_prompt,
+    build_ui_system_prompt,
+    build_ui_user_prompt,
+    build_refine_system_prompt,
+    build_interact_system_prompt,
+    describe_data,
+)
 from litellm import completion
 from integrations import (
     SpotifyDataFetcher,
@@ -69,7 +76,7 @@ class GenerateRequest(BaseModel):
 ModelType = Literal[
     "gpt-5-mini",
     "gpt-5",
-    "anthropic/claude-sonnet-4-5-20250514",
+    "anthropic/claude-sonnet-4-5-20250929",
 ]
 
 
@@ -137,6 +144,14 @@ class RefineRequest(BaseModel):
     query: str
     currentHtml: str
     dataContext: dict
+
+
+class InteractRequest(BaseModel):
+    clickPrompt: str
+    clickedData: dict
+    currentHtml: str
+    dataContext: dict
+    componentType: str
 
 
 @app.get("/health")
@@ -373,7 +388,7 @@ async def generate_ui_legacy(request: GenerateRequest):
             yield f"event: data\ndata: {json.dumps(data_context)}\n\n"
 
             response = await acompletion(
-                model="anthropic/claude-sonnet-4-20250514",
+                model="anthropic/claude-sonnet-4-5-20250929",
                 messages=[
                     {
                         "role": "system",
@@ -426,13 +441,13 @@ TOOL_TO_NAMESPACE = {
 async def generate_ui(request: GenerateRequest):
     async def event_stream() -> AsyncGenerator[str, None]:
         try:
-            yield f"event: status\ndata: {json.dumps({'message': 'Planning...'})}\n\n"
+            yield f"event: thinking\ndata: {json.dumps({'message': 'Planning query...'})}\n\n"
             plan = await plan_and_classify(request.query)
 
             intent = plan.get("intent", "")
             approach = plan.get("approach", "")
 
-            yield f"event: status\ndata: {json.dumps({'message': 'Fetching data...'})}\n\n"
+            yield f"event: thinking\ndata: {json.dumps({'message': f'Intent: {intent}'})}\n\n"
 
             agent_prompt = f"""Based on this user query, fetch the relevant data.
 
@@ -466,6 +481,8 @@ Call the appropriate functions to get the data needed."""
                     function_name = tool_call.function.name
                     function_args = json.loads(tool_call.function.arguments)
 
+                    yield f"event: tool_call\ndata: {json.dumps({'function': function_name, 'args': function_args})}\n\n"
+
                     prefix = function_name.split("_")[0]
                     namespace = TOOL_TO_NAMESPACE.get(prefix, prefix)
 
@@ -486,18 +503,21 @@ Call the appropriate functions to get the data needed."""
                                 key = function_name.replace(f"{prefix}_", "")
                                 data_context[namespace][key] = result
 
+                            yield f"event: tool_result\ndata: {json.dumps({'function': function_name, 'success': True})}\n\n"
+
                         except Exception as e:
                             logger.error(f"Tool {function_name} failed: {e}")
+                            yield f"event: tool_error\ndata: {json.dumps({'function': function_name, 'error': str(e)})}\n\n"
 
             if not data_context:
-                yield f"event: status\ndata: {json.dumps({'message': 'Using sample data...'})}\n\n"
+                yield f"event: thinking\ndata: {json.dumps({'message': 'No tools called, using sample data'})}\n\n"
                 data_context = get_data(plan["sources"], MOCK_DATA)
 
             yield f"event: data\ndata: {json.dumps(data_context)}\n\n"
-            yield f"event: status\ndata: {json.dumps({'message': 'Generating UI...'})}\n\n"
+            yield f"event: thinking\ndata: {json.dumps({'message': 'Generating UI...'})}\n\n"
 
             response = await acompletion(
-                model="anthropic/claude-sonnet-4-20250514",
+                model="anthropic/claude-sonnet-4-5-20250929",
                 messages=[
                     {
                         "role": "system",
@@ -546,42 +566,10 @@ async def refine_ui(request: RefineRequest):
         try:
             yield f"event: data\ndata: {json.dumps(request.dataContext)}\n\n"
 
-            system_prompt = f"""You're editing a live app screen. Make the requested changes while preserving data bindings.
-
-## Current Screen
-{request.currentHtml}
-
-## Golden Rule: NO SYNTHETIC DATA
-
-Never write literal numbers, names, or values. All data comes through:
-- `<data-value data-source="namespace::key"></data-value>`
-- `<component-slot type="..." data-source="namespace::key" ...>`
-
-If you write "87,234" or any actual data value, you've broken the screen.
-
-## Edit Rules
-- Output raw HTML only (no markdown, code fences)
-- Preserve all data-source bindings - move them, don't delete them
-- Same data sources - never invent new ones
-- Sharp edges only (rounded-sm or rounded, never rounded-xl/2xl/3xl)
-- Dark theme: bg-zinc-900/950, text-white/zinc-100
-
-## What to Change
-Respond to the user's edit request:
-- Layout: rearrange, resize, change grid structure
-- Style: colors, spacing, typography, accents
-- Emphasis: scale up/down, reposition
-- Flow: reorder the narrative, change the "hook"
-
-## What to Keep
-- All data-value and component-slot elements
-- Data bindings intact (namespace::key references)
-- The emotional intent unless explicitly changing it
-
-Think: tweaking a shipped app, not rebuilding."""
+            system_prompt = build_refine_system_prompt(request.currentHtml)
 
             response = await acompletion(
-                model="anthropic/claude-sonnet-4-20250514",
+                model="anthropic/claude-sonnet-4-5-20250929",
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": request.query},
@@ -614,9 +602,147 @@ Think: tweaking a shipped app, not rebuilding."""
     )
 
 
+@app.post("/api/interact")
+async def interact_drilldown(request: InteractRequest):
+    async def event_stream() -> AsyncGenerator[str, None]:
+        try:
+            yield f"event: thinking\ndata: {json.dumps({'message': 'Analyzing clicked item...'})}\n\n"
+
+            clicked_item_desc = json.dumps(request.clickedData, indent=2)
+
+            yield f"event: thinking\ndata: {json.dumps({'message': f'Item: {list(request.clickedData.keys())[:3]}'})}\n\n"
+
+            agent_prompt = f"""The user clicked on an item and wants more details.
+
+Click instruction: {request.clickPrompt}
+
+Clicked item data:
+{clicked_item_desc}
+
+Component type: {request.componentType}
+
+Based on this context, fetch detailed data about the clicked item. For example:
+- If it's a song, get audio features, similar tracks, or play history
+- If it's a stock, get detailed quotes, news, or historical data
+- If it's a team, get recent games, roster, or detailed stats
+- If it's an activity, get detailed metrics, splits, or comparisons
+
+Call the appropriate functions to get detailed data for this drill-down view."""
+
+            agent_messages = [
+                {
+                    "role": "system",
+                    "content": "You are a data fetching agent. Fetch detailed data for a drill-down view based on the clicked item. Use available functions to get relevant details."
+                },
+                {"role": "user", "content": agent_prompt}
+            ]
+
+            agent_response = completion(
+                model="gpt-5-mini",
+                messages=agent_messages,
+                tools=tools,
+                tool_choice="auto",
+                api_key=settings.openai_api_key
+            )
+
+            detail_data = {}
+            tool_calls = agent_response.choices[0].message.tool_calls
+
+            if tool_calls:
+                for tool_call in tool_calls:
+                    function_name = tool_call.function.name
+                    function_args = json.loads(tool_call.function.arguments)
+
+                    yield f"event: tool_call\ndata: {json.dumps({'function': function_name, 'args': function_args})}\n\n"
+
+                    prefix = function_name.split("_")[0]
+                    namespace = TOOL_TO_NAMESPACE.get(prefix, prefix)
+
+                    function_to_call = available_functions.get(function_name)
+                    if function_to_call:
+                        try:
+                            if function_args:
+                                result = function_to_call(**function_args)
+                            else:
+                                result = function_to_call()
+
+                            if namespace not in detail_data:
+                                detail_data[namespace] = {}
+
+                            if isinstance(result, dict):
+                                detail_data[namespace].update(result)
+                            else:
+                                key = function_name.replace(f"{prefix}_", "")
+                                detail_data[namespace][key] = result
+
+                            yield f"event: tool_result\ndata: {json.dumps({'function': function_name, 'success': True})}\n\n"
+
+                        except Exception as e:
+                            logger.error(f"Tool {function_name} failed: {e}")
+                            yield f"event: tool_error\ndata: {json.dumps({'function': function_name, 'error': str(e)})}\n\n"
+
+            combined_context = {**request.dataContext}
+            for namespace, data in detail_data.items():
+                if namespace in combined_context:
+                    combined_context[namespace].update(data)
+                else:
+                    combined_context[namespace] = data
+
+            combined_context["clicked_item"] = request.clickedData
+
+            yield f"event: data\ndata: {json.dumps(combined_context)}\n\n"
+            yield f"event: thinking\ndata: {json.dumps({'message': 'Generating detail view...'})}\n\n"
+
+            system_prompt = build_interact_system_prompt(
+                clicked_item_desc,
+                request.clickPrompt,
+                request.componentType
+            )
+
+            user_prompt = f"""Clicked item: {request.clickPrompt}
+
+Data Available:
+{describe_data(combined_context)}
+
+Generate the detail view HTML now."""
+
+            response = await acompletion(
+                model="anthropic/claude-sonnet-4-5-20250929",
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ],
+                stream=True,
+                max_tokens=4000,
+                api_key=settings.anthropic_api_key,
+            )
+
+            async for chunk in response:
+                if (
+                    hasattr(chunk.choices[0].delta, "content")
+                    and chunk.choices[0].delta.content
+                ):
+                    content = chunk.choices[0].delta.content
+                    yield f"event: ui\ndata: {json.dumps({'content': content})}\n\n"
+
+            yield f"event: done\ndata: {{}}\n\n"
+
+        except Exception as e:
+            yield f"event: error\ndata: {json.dumps({'message': str(e)})}\n\n"
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+        },
+    )
+
+
 async def plan_and_classify(query: str) -> dict:
     response = await acompletion(
-        model="anthropic/claude-sonnet-4-20250514",
+        model="anthropic/claude-sonnet-4-5-20250929",
         messages=[{"role": "user", "content": build_planning_prompt(query)}],
         max_tokens=300,
         api_key=settings.anthropic_api_key,

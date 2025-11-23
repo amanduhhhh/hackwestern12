@@ -50,7 +50,7 @@ team_names: List[str]  # e.g., ["bruins", "penguins", "maple leafs"]
 
 **Parameters:**
 ```python
-symbol: str  # Required - Stock ticker symbol
+symbols: List[str]  # Required - List of stock ticker symbols
 ```
 
 **Valid Symbols:**
@@ -61,9 +61,20 @@ symbol: str  # Required - Stock ticker symbol
 
 **Examples:**
 ```python
-"AAPL"      # Apple Inc.
-"TSLA"      # Tesla, Inc.
-"^GSPC"     # S&P 500 Index
+["AAPL"]                    # Single stock
+["AAPL", "GOOGL", "MSFT"]   # Multiple stocks
+["TSLA", "NVDA"]            # Tech stocks
+```
+
+**Returns:**
+```python
+{
+    "stocks": [
+        {"symbol": "AAPL", "name": "Apple Inc.", "current_price": 271.49, ...},
+        {"symbol": "GOOGL", "name": "Alphabet Inc.", "current_price": 299.66, ...}
+    ],
+    "last_updated": "2025-11-23T00:32:01.174366"
+}
 ```
 
 ### `stocks_fetch_portfolio_data`
@@ -199,15 +210,16 @@ def fetch_user_sports_summary(self, team_names: List[str]):
     ...
 
 @tool_function(
-    description="Get real-time stock price, volume, and company info for a ticker symbol",
+    description="Get real-time stock price, volume, market cap, and year performance for one or more ticker symbols",
     params={
-        "symbol": {
-            "type": "string",
-            "description": "Stock ticker symbol (e.g., AAPL, TSLA, GOOGL, MSFT, AMZN, NVDA, META)"
+        "symbols": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "List of stock ticker symbols (e.g., ['AAPL', 'TSLA', 'GOOGL', 'MSFT', 'AMZN', 'NVDA', 'META'])"
         }
     }
 )
-def fetch_stock_info(self, symbol: str):
+def fetch_stock_info(self, symbols: List[str]):
     ...
 
 @tool_function(
