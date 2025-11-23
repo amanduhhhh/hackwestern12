@@ -143,6 +143,49 @@ MOCK_DATA = {
             {"name": "Whole Foods", "amount": 380, "transactions": 8},
             {"name": "Netflix", "amount": 45, "transactions": 3},
         ],
+        "recent_transactions": [
+            {"date": "2024-01-15", "merchant": "Whole Foods", "category": "Food & Dining", "amount": 67.84, "status": "completed"},
+            {"date": "2024-01-14", "merchant": "Uber", "category": "Transportation", "amount": 23.50, "status": "completed"},
+            {"date": "2024-01-14", "merchant": "Amazon", "category": "Shopping", "amount": 142.99, "status": "completed"},
+            {"date": "2024-01-13", "merchant": "Spotify", "category": "Entertainment", "amount": 9.99, "status": "completed"},
+            {"date": "2024-01-12", "merchant": "Shell Gas", "category": "Transportation", "amount": 48.20, "status": "completed"},
+            {"date": "2024-01-11", "merchant": "Target", "category": "Shopping", "amount": 89.45, "status": "completed"},
+            {"date": "2024-01-10", "merchant": "Chipotle", "category": "Food & Dining", "amount": 14.25, "status": "completed"},
+            {"date": "2024-01-09", "merchant": "Electric Co", "category": "Utilities", "amount": 95.00, "status": "pending"},
+        ],
+        "subscriptions": [
+            {"service": "Netflix", "amount": 15.99, "billing_date": "1st", "status": "active"},
+            {"service": "Spotify", "amount": 9.99, "billing_date": "15th", "status": "active"},
+            {"service": "iCloud", "amount": 2.99, "billing_date": "20th", "status": "active"},
+            {"service": "Gym", "amount": 49.99, "billing_date": "1st", "status": "active"},
+            {"service": "NYTimes", "amount": 4.25, "billing_date": "10th", "status": "paused"},
+        ],
+    },
+    "productivity": {
+        "tasks_completed": 847,
+        "projects_active": 5,
+        "meetings_this_week": 12,
+        "focus_hours": 32,
+        "tasks": [
+            {"title": "Review Q4 metrics", "project": "Analytics", "priority": "high", "due": "2024-01-16", "status": "in_progress"},
+            {"title": "Update API docs", "project": "Documentation", "priority": "medium", "due": "2024-01-18", "status": "todo"},
+            {"title": "Fix login bug", "project": "Auth Service", "priority": "high", "due": "2024-01-15", "status": "completed"},
+            {"title": "Design new dashboard", "project": "Analytics", "priority": "low", "due": "2024-01-25", "status": "todo"},
+            {"title": "Team standup prep", "project": "Operations", "priority": "medium", "due": "2024-01-15", "status": "in_progress"},
+        ],
+        "time_by_project": [
+            {"project": "Analytics", "hours": 18, "tasks": 12},
+            {"project": "Auth Service", "hours": 8, "tasks": 5},
+            {"project": "Documentation", "hours": 6, "tasks": 8},
+            {"project": "Operations", "hours": 4, "tasks": 15},
+        ],
+        "weekly_focus": [
+            {"day": "Mon", "deep_work": 4.5, "meetings": 2, "admin": 1.5},
+            {"day": "Tue", "deep_work": 5, "meetings": 1.5, "admin": 1.5},
+            {"day": "Wed", "deep_work": 3, "meetings": 3.5, "admin": 1.5},
+            {"day": "Thu", "deep_work": 6, "meetings": 1, "admin": 1},
+            {"day": "Fri", "deep_work": 4, "meetings": 2, "admin": 2},
+        ],
     },
 }
 
@@ -265,34 +308,44 @@ TOOL_REGISTRY = {
 COMPONENT_SCHEMAS = {
     "List": {
         "description": "Displays a list of items with primary/secondary text",
+        "use_when": "Simple items with primary/secondary text (songs, players, books)",
+        "data_shape": "array",
         "data": [{"id": "string|number", "title": "string", "subtitle": "string"}],
         "config": {"template": {"primary": "field_name", "secondary": "field_name"}},
     },
     "Card": {
         "description": "Single card with title, description, optional image",
+        "use_when": "Single featured item or profile display",
+        "data_shape": "object",
         "data": {"title": "string", "description": "string", "image": "url"},
-        "config": {},
+        "config": {"template": {"primary": "field_name", "secondary": "field_name"}},
     },
     "Chart": {
         "description": "Bar chart for numerical data",
+        "use_when": "Numerical comparisons and trends (calories by type, performance over time)",
+        "data_shape": "array",
         "data": [{"label": "string", "value": "number"}],
         "config": {"template": {"x": "field_name", "y": "field_name"}},
     },
     "Grid": {
-        "description": "Grid of items with images",
-        "data": [{"id": "string|number", "title": "string", "image": "url"}],
-        "config": {"columns": "number (default 3)"},
+        "description": "Side-by-side cards for comparing 2-6 entities",
+        "use_when": "Comparing teams, stocks, people. Data MUST be an array, not an object.",
+        "data_shape": "array",
+        "data": [{"id": "string|number", "title": "string", "subtitle": "string"}],
+        "config": {"columns": "number (2-3 for comparisons)", "template": {"title": "field_name", "subtitle": "field_name"}},
     },
     "Timeline": {
-        "description": "Vertical timeline of events",
-        "data": [
-            {
-                "id": "string|number",
-                "title": "string",
-                "description": "string",
-                "timestamp": "string",
-            }
-        ],
-        "config": {},
+        "description": "Vertical timeline of chronological events",
+        "use_when": "ONLY for dated/chronological events (activities, workouts). Data MUST be an array.",
+        "data_shape": "array",
+        "data": [{"id": "string|number", "title": "string", "description": "string", "timestamp": "string"}],
+        "config": {"template": {"title": "field_name", "description": "field_name"}},
+    },
+    "Table": {
+        "description": "Tabular data display with rows and columns",
+        "use_when": "Data with 3+ comparable columns (transactions, stats). Data MUST be an array of rows.",
+        "data_shape": "array",
+        "data": [{"column1": "value", "column2": "value"}],
+        "config": {"template": {"columns": ["field1", "field2", "field3"]}},
     },
 }

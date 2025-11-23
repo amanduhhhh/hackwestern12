@@ -50,18 +50,17 @@ export interface ComponentConfig {
 
 export interface InteractionPayload {
   componentType: string;
-  interaction: string | null;
-  item?: ListItem | GridItem | TimelineEvent;
-  event?: TimelineEvent;
-  point?: ChartDataPoint;
-  data?: CardData;
-  index?: number;
+  clickPrompt: string | null;
+  slotId: string;
+  clickedData: unknown;
 }
 
 export interface ComponentProps {
   data: ComponentData;
   config: ComponentConfig;
-  onInteraction: (type: string, payload: Omit<InteractionPayload, 'componentType' | 'interaction'>) => void;
+  clickPrompt?: string;
+  slotId?: string;
+  onInteraction?: (payload: { clickedData: unknown }) => void;
 }
 
 export type ComponentRegistry = Record<string, React.ComponentType<ComponentProps>>;

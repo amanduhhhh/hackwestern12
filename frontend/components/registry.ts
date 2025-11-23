@@ -5,6 +5,7 @@ import {
   ChartPlaceholder,
   GridPlaceholder,
   TimelinePlaceholder,
+  TablePlaceholder,
 } from './placeholders';
 
 export const COMPONENT_REGISTRY: ComponentRegistry = {
@@ -13,4 +14,5 @@ export const COMPONENT_REGISTRY: ComponentRegistry = {
   Chart: ChartPlaceholder,
   Grid: GridPlaceholder,
   Timeline: TimelinePlaceholder,
+  Table: TablePlaceholder,
 };

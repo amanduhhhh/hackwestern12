@@ -4,12 +4,14 @@ import { useRef } from 'react';
 import { motion } from 'framer-motion';
 import type { ComponentProps, TimelineEvent } from '../types';
 
-export function TimelinePlaceholder({ data, onInteraction }: ComponentProps) {
+export function TimelinePlaceholder({ data, clickPrompt, onInteraction }: ComponentProps) {
   const events = (data as TimelineEvent[]) || [];
   const hasAnimated = useRef(false);
 
   const shouldAnimate = !hasAnimated.current;
   if (shouldAnimate) hasAnimated.current = true;
+
+  const isInteractive = !!clickPrompt && !!onInteraction;
 
   return (
     <motion.div
@@ -26,8 +28,8 @@ export function TimelinePlaceholder({ data, onInteraction }: ComponentProps) {
           initial={shouldAnimate ? { opacity: 0, x: -8 } : false}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.2, delay: shouldAnimate ? index * 0.08 : 0 }}
-          onClick={() => onInteraction('select', { event, index })}
-          className="relative mb-4 cursor-pointer"
+          onClick={() => isInteractive && onInteraction({ clickedData: event })}
+          className={`relative mb-4 ${isInteractive ? 'cursor-pointer' : ''}`}
         >
           <div className="absolute -left-6 top-1.5 h-3 w-3 rounded-full bg-blue-500" />
           <div className="rounded-lg bg-white p-3 shadow-sm transition-shadow hover:shadow-md dark:bg-zinc-800">

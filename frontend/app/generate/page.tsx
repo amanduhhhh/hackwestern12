@@ -4,15 +4,27 @@ import { useState } from 'react';
 import Script from 'next/script';
 import { useStreamStore } from '@/stores/stream';
 import { HybridRenderer } from '@/components/HybridRenderer';
-import type { InteractionPayload } from '@/components/types';
+
+// const PRESETS_OLD = [
+//   "Show my recent transactions and spending breakdown",
+//   "What are my active subscriptions and monthly costs?",
+//   "Show my tasks and project time allocation",
+//   "How much music did I listen to this year?",
+//   "Show my fitness stats - workouts and calories",
+//   "What books did I read and how many pages?",
+// ];
 
 const PRESETS = [
-  "How much music did I listen to this year?",
-  "What were my top songs and genres?",
-  "Show my fitness stats - workouts and calories",
-  "Where did I travel and for how long?",
-  "What books did I read this year?",
-  "Compare my music listening to my workouts",
+  "Show my Spotify top songs and listening stats",
+  "Lakers vs Celtics - compare their season records",
+  "My running stats from Strava with recent activities",
+  "AAPL, GOOGL, MSFT stock prices and performance",
+  "Cowboys, Yankees, and Bruins - my favorite teams",
+  "Compare my workout calories burned vs music listening time",
+  "Tech stock portfolio with market trends",
+  "NFL standings for Chiefs, Eagles, and Bills",
+  "My Clash Royale player stats and recent battles",
+  "Top genres I listen to and Lakers game schedule",
 ];
 
 export default function GeneratePage() {
@@ -27,7 +39,8 @@ export default function GeneratePage() {
     error,
     startStream,
     reset,
-    refineStream
+    refineStream,
+    handleInteraction
   } = useStreamStore();
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -41,10 +54,6 @@ export default function GeneratePage() {
     if (!refineQuery.trim() || isStreaming || !rawResponse) return;
     refineStream(refineQuery);
     setRefineQuery('');
-  };
-
-  const handleInteraction = (type: string, payload: InteractionPayload) => {
-    console.log('Interaction:', type, payload);
   };
 
   return (
@@ -102,8 +111,8 @@ export default function GeneratePage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 h-[calc(100vh-140px)]">
-        <div className="border-r border-zinc-800 overflow-auto">
+      <div className="grid grid-cols-1 lg:grid-cols-3 h-[calc(100vh-140px)]">
+        <div className="lg:col-span-2 border-r border-zinc-800 overflow-auto">
           <div className="p-4">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-sm font-medium text-zinc-400">Rendered Output</h2>

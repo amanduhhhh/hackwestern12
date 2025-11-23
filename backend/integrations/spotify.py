@@ -5,6 +5,8 @@ from datetime import datetime
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 
+from tool_generator import tool_function
+
 logger = logging.getLogger(__name__)
 
 
@@ -37,6 +39,10 @@ class SpotifyDataFetcher:
             logger.error(f"Spotify auth error: {e}")
             return None
 
+    @tool_function(
+        description="Get user's Spotify listening stats including top songs, artists, genres, and total listening time",
+        params={}
+    )
     def fetch_user_data(self) -> Optional[Dict[str, Any]]:
         sp = self.get_spotify_client()
         if not sp:
